@@ -257,6 +257,14 @@ body {
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; z-index: 10;
 }
+.home-btn {
+  position: fixed; top: 16px; left: 16px;
+  background: white; border: none; border-radius: 20px;
+  padding: 0 14px; height: 36px; font-size: 13px; font-weight: 600;
+  color: #5b6ef5; display: flex; align-items: center; gap: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; z-index: 10;
+  text-decoration: none;
+}
 </style>
 </head>
 <body>
@@ -314,6 +322,7 @@ body {
 
   <!-- PICKER SCREEN -->
   <div class="screen" id="picker-screen">
+    <a class="home-btn" href="index.html">← Home</a>
     <button class="settings-btn" onclick="showSetup()" title="Change API key">⚙️</button>
     <div class="hero">
       <h1>Character <span>Chat</span> ✨</h1>
