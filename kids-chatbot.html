@@ -31,8 +31,26 @@ body {
 }
 .setup-emoji { font-size: 52px; margin-bottom: 16px; }
 .setup-card h2 { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
-.setup-card p { font-size: 14px; color: #777; line-height: 1.5; margin-bottom: 24px; }
+.setup-card > p { font-size: 14px; color: #777; line-height: 1.5; margin-bottom: 20px; }
 .setup-card a { color: #5b6ef5; text-decoration: none; }
+.provider-toggle {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px;
+}
+.provider-btn {
+  border: 2px solid #e0e4ff; border-radius: 14px; padding: 12px 8px;
+  background: #f8f9ff; cursor: pointer; font-size: 13px; font-weight: 600;
+  color: #999; transition: all 0.15s;
+}
+.provider-btn .pb-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+.provider-btn.active { border-color: #5b6ef5; background: #eef0ff; color: #5b6ef5; }
+.setup-section { display: none; text-align: left; }
+.setup-section.visible { display: block; }
+.setup-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #999; margin-bottom: 5px;
+}
+.setup-hint { font-size: 12px; color: #aaa; margin-bottom: 14px; line-height: 1.4; }
+.setup-hint a { color: #5b6ef5; text-decoration: none; }
 .key-input {
   width: 100%; border: 1.5px solid #e0e4ff; border-radius: 12px;
   padding: 12px 14px; font-size: 13px; font-family: monospace;
@@ -42,6 +60,7 @@ body {
 .setup-btn {
   width: 100%; background: #5b6ef5; border: none; border-radius: 12px;
   padding: 14px; font-size: 16px; font-weight: 600; color: white; cursor: pointer;
+  margin-top: 4px;
 }
 .setup-btn:active { background: #4454d4; }
 .setup-error { font-size: 13px; color: #ff4757; margin-top: 10px; display: none; }
@@ -183,12 +202,34 @@ body {
   <div class="screen active" id="setup-screen">
     <div class="setup-wrap">
       <div class="setup-card">
-        <div class="setup-emoji">🔑</div>
-        <h2>One-time setup</h2>
-        <p>Paste your Anthropic API key below. It's saved only on this device and never sent anywhere except Anthropic's servers.<br><br>Get yours at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
-        <input class="key-input" type="password" id="api-key-input" placeholder="sk-ant-api03-..." />
-        <button class="setup-btn" onclick="saveKey()">Save & Start Chatting ✨</button>
-        <div class="setup-error" id="setup-error">Please paste a valid API key (starts with sk-ant-)</div>
+        <div class="setup-emoji">⚙️</div>
+        <h2>Setup</h2>
+        <p>Choose how to power the chat. Everything is saved only on this device.</p>
+        <div class="provider-toggle">
+          <button class="provider-btn active" id="btn-anthropic" onclick="selectProvider('anthropic')">
+            <span class="pb-icon">☁️</span>Anthropic Claude
+          </button>
+          <button class="provider-btn" id="btn-local" onclick="selectProvider('local')">
+            <span class="pb-icon">🖥️</span>Local LLM
+          </button>
+        </div>
+        <!-- Anthropic section -->
+        <div class="setup-section visible" id="section-anthropic">
+          <div class="setup-label">API Key</div>
+          <div class="setup-hint">Get yours at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
+          <input class="key-input" type="password" id="api-key-input" placeholder="sk-ant-api03-..." />
+        </div>
+        <!-- Local LLM section -->
+        <div class="setup-section" id="section-local">
+          <div class="setup-label">Server URL</div>
+          <div class="setup-hint">The base URL of your Ollama or OpenAI-compatible server</div>
+          <input class="key-input" type="text" id="local-url-input" placeholder="http://caticornqueen:11434/v1/chat/completions" />
+          <div class="setup-label">Model</div>
+          <div class="setup-hint">Must be pulled and available on your server</div>
+          <input class="key-input" type="text" id="local-model-input" placeholder="qwen2.5:14b" />
+        </div>
+        <button class="setup-btn" onclick="saveSettings()">Save & Start Chatting ✨</button>
+        <div class="setup-error" id="setup-error"></div>
       </div>
     </div>
   </div>
@@ -285,22 +326,52 @@ const STARTER_SUGGESTIONS = {
 let currentChar = null;
 let history = [];
 
-function getKey() { return window.CC_API_KEY || localStorage.getItem('cc_api_key') || ''; }
+function getProvider() { return localStorage.getItem('cc_provider') || window.CC_PROVIDER || 'anthropic'; }
+function getKey()      { return window.CC_API_KEY || localStorage.getItem('cc_api_key') || ''; }
+function getLocalUrl() { return localStorage.getItem('cc_local_url') || window.CC_LOCAL_URL || ''; }
+function getLocalModel(){ return localStorage.getItem('cc_local_model') || window.CC_LOCAL_MODEL || ''; }
 
-function saveKey() {
-  const val = document.getElementById('api-key-input').value.trim();
+let _selectedProvider = 'anthropic';
+
+function selectProvider(p) {
+  _selectedProvider = p;
+  document.getElementById('btn-anthropic').classList.toggle('active', p === 'anthropic');
+  document.getElementById('btn-local').classList.toggle('active', p === 'local');
+  document.getElementById('section-anthropic').classList.toggle('visible', p === 'anthropic');
+  document.getElementById('section-local').classList.toggle('visible', p === 'local');
+}
+
+function saveSettings() {
   const err = document.getElementById('setup-error');
-  if (!val.startsWith('sk-ant-')) { err.style.display = 'block'; return; }
   err.style.display = 'none';
-  localStorage.setItem('cc_api_key', val);
+  if (_selectedProvider === 'anthropic') {
+    const key = document.getElementById('api-key-input').value.trim();
+    if (!key.startsWith('sk-ant-')) {
+      err.textContent = 'Please paste a valid API key (starts with sk-ant-)';
+      err.style.display = 'block'; return;
+    }
+    localStorage.setItem('cc_api_key', key);
+  } else {
+    const url = document.getElementById('local-url-input').value.trim();
+    const model = document.getElementById('local-model-input').value.trim();
+    if (!url) { err.textContent = 'Please enter the server URL'; err.style.display = 'block'; return; }
+    if (!model) { err.textContent = 'Please enter a model name'; err.style.display = 'block'; return; }
+    localStorage.setItem('cc_local_url', url);
+    localStorage.setItem('cc_local_model', model);
+  }
+  localStorage.setItem('cc_provider', _selectedProvider);
   showPicker();
 }
 
 function showSetup() {
+  const p = getProvider();
+  selectProvider(p);
+  document.getElementById('api-key-input').value = getKey();
+  document.getElementById('local-url-input').value = getLocalUrl();
+  document.getElementById('local-model-input').value = getLocalModel();
   document.getElementById('setup-screen').classList.add('active');
   document.getElementById('picker-screen').classList.remove('active');
   document.getElementById('chat-screen').classList.remove('active');
-  document.getElementById('api-key-input').value = getKey();
 }
 
 function showPicker() {
@@ -379,8 +450,7 @@ function setChips(suggestions, loading = false) {
 }
 
 async function callLLM({ system, messages, maxTokens = 1000 }) {
-  const provider = window.CC_PROVIDER || 'anthropic';
-  if (provider === 'anthropic') {
+  if (getProvider() === 'anthropic') {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -397,10 +467,10 @@ async function callLLM({ system, messages, maxTokens = 1000 }) {
   } else {
     const systemContent = (system ? system + '\n\n' : '') + 'IMPORTANT: Always respond in English only. Never switch to another language.';
     const openaiMessages = [{ role: 'system', content: systemContent }, ...messages];
-    const res = await fetch(window.CC_LOCAL_URL || 'http://localhost:11434/v1/chat/completions', {
+    const res = await fetch(getLocalUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: window.CC_LOCAL_MODEL || 'llama3.2', messages: openaiMessages })
+      body: JSON.stringify({ model: getLocalModel(), messages: openaiMessages })
     });
     if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'Local LLM error'); }
     const data = await res.json();
@@ -478,7 +548,8 @@ async function sendMessage() {
 document.getElementById('user-input').addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
 
 renderCharacters();
-if (getKey()) { showPicker(); } else { document.getElementById('setup-screen').classList.add('active'); }
+const _hasConfig = getProvider() === 'local' ? (getLocalUrl() && getLocalModel()) : getKey();
+if (_hasConfig) { showPicker(); } else { showSetup(); }
 </script>
 </body>
 </html>
