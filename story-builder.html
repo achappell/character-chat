@@ -15,7 +15,7 @@ body {
   min-height: 100vh;
   color: #1a1a2e;
 }
-.app { max-width: 600px; margin: 0 auto; padding: 0 16px 48px; min-height: 100vh; }
+.app { max-width: 700px; margin: 0 auto; padding: 0 16px 48px; min-height: 100vh; }
 
 /* SETUP */
 .setup-hero { text-align: center; padding: 36px 0 24px; }
@@ -29,14 +29,14 @@ body {
 }
 
 .pick-row {
-  display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px;
-  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
 }
-.pick-row::-webkit-scrollbar { display: none; }
 
 .pick-card {
-  flex-shrink: 0; background: white; border-radius: 16px;
-  padding: 14px 10px; text-align: center; cursor: pointer; min-width: 88px;
+  background: white; border-radius: 16px;
+  padding: 14px 10px; text-align: center; cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07); border: 2.5px solid transparent;
   transition: transform 0.1s; -webkit-user-select: none; user-select: none;
 }
@@ -52,6 +52,16 @@ body {
 }
 .begin-btn:disabled { background: #d0d8ff; color: #a0a8d0; cursor: default; }
 .begin-btn:active:not(:disabled) { background: #d97706; }
+
+@media (max-height: 520px) {
+  .setup-hero { padding: 8px 0 12px; }
+  .setup-hero h1 { font-size: 22px; }
+  .setup-hero p { display: none; }
+  .section-label { margin: 10px 0 6px 2px; }
+  .pick-card { padding: 8px 6px; }
+  .pick-emoji { font-size: 22px; margin-bottom: 4px; }
+  .begin-btn { margin-top: 14px; padding: 12px; font-size: 15px; }
+}
 
 .no-key-msg {
   text-align: center; padding: 60px 20px;
