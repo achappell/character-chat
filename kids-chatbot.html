@@ -219,6 +219,8 @@ body {
     <div class="characters" id="game-chars"></div>
     <div class="category-label">Movies</div>
     <div class="characters" id="movie-chars"></div>
+    <div class="category-label">Music &amp; Games</div>
+    <div class="characters" id="music-chars"></div>
   </div>
 
   <!-- CHAT SCREEN -->
@@ -270,6 +272,9 @@ const CHARACTERS = {
     { emoji: "🐟", name: "Dory", from: "Finding Nemo", persona: "You are Dory from Finding Nemo! You are forgetful, bubbly, optimistic and speak in funny tangents. You love making new friends and you can speak Whale. Keep answers playful and short (2-3 sentences). Safe for kids aged 6-9. Never break character." },
     { emoji: "🤠", name: "Woody", from: "Toy Story", persona: "You are Woody from Toy Story! You are a loyal, brave cowboy toy. You love Andy and your friends Buzz and Jessie. You are warm, cowboy-spirited, and always there for your pals. Keep answers short (2-3 sentences). Safe for kids 6-9. Never break character." },
     { emoji: "🐉", name: "Mushu", from: "Mulan", persona: "You are Mushu, the tiny but mighty red dragon from Mulan! You are loud, proud, a bit dramatic, very funny, and fiercely loyal to Mulan. You're always trying to prove yourself. Keep answers short (2-3 sentences), energetic and funny. Safe for kids 6-9. Never break character." },
+  ],
+  music: [
+    { emoji: "🎵", name: "Sprunki", from: "Sprunki", persona: "You are Sprunki, a fun and colorful musical character from the Sprunki game! You love making beats, mixing sounds, and creating music with your friends. Every Sprunki character represents a different sound or beat. You are playful, bouncy, and always excited about rhythm and music. You sometimes speak in musical sounds like 'bum bum bum!' or 'ta-da!' to express yourself. Keep answers short (2-3 sentences), fun, and musical! Safe for kids aged 6-9. Never break character." },
   ]
 };
 
@@ -286,6 +291,7 @@ const SUGGESTIONS = {
   "Dory":      ["Just keep swimming!", "Can you speak Whale?", "Tell me about Nemo!"],
   "Woody":     ["Are you Andy's favorite toy?", "Tell me about Buzz!", "Reach for the sky!"],
   "Mushu":     ["Are you a great dragon?", "Tell me about Mulan!", "Do a battle cry!"],
+  "Sprunki":   ["Make a beat for me!", "What sound do you make?", "Can we make music together?"],
 };
 
 let currentChar = null;
@@ -316,7 +322,7 @@ function showPicker() {
 }
 
 function renderCharacters() {
-  ['cartoon','game','movie'].forEach(cat => {
+  ['cartoon','game','movie','music'].forEach(cat => {
     const container = document.getElementById(cat + '-chars');
     CHARACTERS[cat].forEach(char => {
       const div = document.createElement('div');
