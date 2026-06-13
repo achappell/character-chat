@@ -527,7 +527,13 @@ function saveSettings() {
     localStorage.setItem('cc_local_model', model);
   }
   localStorage.setItem('cc_provider', _selectedProvider);
-  if (getProfileName()) showPicker(); else showProfile();
+  if (new URLSearchParams(location.search).get('settings')) {
+    history.back();
+  } else if (getProfileName()) {
+    showPicker();
+  } else {
+    showProfile();
+  }
 }
 
 function showSetup() {
@@ -734,8 +740,11 @@ async function sendMessage() {
 document.getElementById('user-input').addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
 
 renderCharacters();
+const _forceSettings = new URLSearchParams(location.search).get('settings');
 const _hasConfig = getProvider() === 'local' ? (getLocalUrl() && getLocalModel()) : getKey();
-if (_hasConfig) {
+if (_forceSettings) {
+  showSetup();
+} else if (_hasConfig) {
   if (getProfileName()) showPicker(); else showProfile();
 } else {
   showSetup();
