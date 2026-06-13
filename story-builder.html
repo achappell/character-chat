@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Story Builder">
+<title>Story Builder 📖</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f0f4ff;
+  min-height: 100vh;
+  color: #1a1a2e;
+}
+.app { max-width: 600px; margin: 0 auto; padding: 0 16px 48px; min-height: 100vh; }
+
+/* SETUP */
+.setup-hero { text-align: center; padding: 36px 0 24px; }
+.setup-hero h1 { font-size: 28px; font-weight: 800; line-height: 1.2; }
+.setup-hero h1 span { color: #f59e0b; }
+.setup-hero p { font-size: 15px; color: #777; margin-top: 6px; }
+
+.section-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #999; margin: 20px 0 10px 2px;
+}
+
+.pick-row {
+  display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.pick-row::-webkit-scrollbar { display: none; }
+
+.pick-card {
+  flex-shrink: 0; background: white; border-radius: 16px;
+  padding: 14px 10px; text-align: center; cursor: pointer; min-width: 88px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07); border: 2.5px solid transparent;
+  transition: transform 0.1s; -webkit-user-select: none; user-select: none;
+}
+.pick-card.selected { border-color: #f59e0b; background: #fffbeb; }
+.pick-card:active { transform: scale(0.93); }
+.pick-emoji { font-size: 30px; display: block; margin-bottom: 6px; }
+.pick-label { font-size: 12px; font-weight: 600; color: #444; line-height: 1.3; }
+
+.begin-btn {
+  display: block; width: 100%; background: #f59e0b; border: none;
+  border-radius: 16px; padding: 16px; font-size: 17px; font-weight: 700;
+  color: white; cursor: pointer; margin-top: 28px;
+}
+.begin-btn:disabled { background: #d0d8ff; color: #a0a8d0; cursor: default; }
+.begin-btn:active:not(:disabled) { background: #d97706; }
+
+.no-key-msg {
+  text-align: center; padding: 60px 20px;
+  font-size: 15px; color: #777; line-height: 1.7;
+}
+.no-key-msg a { color: #5b6ef5; text-decoration: none; font-weight: 600; }
+
+/* STORY SCREEN */
+.story-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0 14px;
+}
+.top-btn {
+  background: #f0f4ff; border: none; border-radius: 10px;
+  padding: 8px 12px; font-size: 13px; color: #5b6ef5;
+  font-weight: 600; cursor: pointer;
+}
+.top-btn:active { background: #dde3ff; }
+
+.chapter-dots { display: flex; gap: 7px; align-items: center; }
+.dot-pip {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #d0d8ff; transition: all 0.25s;
+}
+.dot-pip.done { background: #f59e0b; }
+.dot-pip.active { background: #5b6ef5; width: 22px; border-radius: 4px; }
+
+.chapter-block { margin-bottom: 20px; }
+.chapter-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #f59e0b; margin-bottom: 8px;
+}
+.chapter-card {
+  background: white; border-radius: 16px; padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  font-size: 16px; line-height: 1.75; color: #2a2a3e;
+}
+.chapter-card.final { border: 2px solid #fde68a; }
+
+.chosen-label {
+  text-align: center; padding: 8px 0 16px;
+  font-size: 13px; color: #aaa; font-style: italic;
+}
+
+.choice-label {
+  font-size: 12px; font-weight: 700; color: #999;
+  text-align: center; margin: 20px 0 12px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.choice-btn {
+  display: flex; align-items: center; width: 100%;
+  background: white; border: 2px solid #e0e4ff; border-radius: 14px;
+  padding: 15px 16px; font-size: 15px; font-weight: 500; color: #1a1a2e;
+  cursor: pointer; text-align: left; margin-bottom: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); gap: 12px;
+}
+.choice-btn:active { border-color: #5b6ef5; background: #f0f4ff; }
+.choice-letter {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: #f0f4ff; color: #5b6ef5; font-size: 12px; font-weight: 700;
+}
+
+.loading-card {
+  background: white; border-radius: 16px; padding: 32px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06); text-align: center;
+  margin-bottom: 20px;
+}
+.loading-dots { display: flex; justify-content: center; gap: 7px; margin-bottom: 12px; }
+.ldot {
+  width: 10px; height: 10px; border-radius: 50%; background: #f59e0b;
+  animation: ldot 1.2s infinite;
+}
+.ldot:nth-child(2) { animation-delay: 0.2s; }
+.ldot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes ldot { 0%,60%,100%{transform:translateY(0);opacity:0.35} 30%{transform:translateY(-8px);opacity:1} }
+.loading-text { font-size: 14px; color: #bbb; font-style: italic; }
+
+/* END SCREEN */
+.end-wrap { text-align: center; padding-top: 40px; }
+.end-star { font-size: 64px; margin-bottom: 12px; }
+.end-title { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+.end-sub { font-size: 15px; color: #777; margin-bottom: 28px; }
+
+.full-story-card {
+  background: white; border-radius: 16px; padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  text-align: left; margin-bottom: 24px;
+}
+.fs-chapter { margin-bottom: 14px; }
+.fs-label { font-size: 10px; font-weight: 700; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+.fs-text { font-size: 15px; line-height: 1.7; color: #2a2a3e; }
+.fs-choice { font-size: 12px; color: #bbb; font-style: italic; margin-top: 6px; }
+.fs-divider { border: none; border-top: 1px solid #f0f0f0; margin: 14px 0; }
+
+.end-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.btn-gold {
+  background: #f59e0b; border: none; border-radius: 14px;
+  padding: 14px 24px; font-size: 16px; font-weight: 700; color: white; cursor: pointer;
+}
+.btn-gold:active { background: #d97706; }
+.btn-ghost {
+  background: #f0f4ff; border: none; border-radius: 14px;
+  padding: 14px 20px; font-size: 15px; font-weight: 600; color: #5b6ef5;
+  cursor: pointer; text-decoration: none; display: inline-block;
+}
+.btn-ghost:active { background: #dde3ff; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SETUP SCREEN -->
+  <div id="setup-screen">
+    <div class="setup-hero">
+      <h1>Story <span>Builder</span> 📖</h1>
+      <p>Build your own adventure, one choice at a time!</p>
+    </div>
+
+    <div id="no-key-msg" class="no-key-msg" style="display:none">
+      Open <a href="kids-chatbot.html">Character Chat</a> first and enter your API key, then come back here!
+    </div>
+
+    <div id="setup-form">
+      <div class="section-label">Your hero</div>
+      <div class="pick-row" id="hero-row"></div>
+
+      <div class="section-label">The world</div>
+      <div class="pick-row" id="setting-row"></div>
+
+      <div class="section-label">The quest</div>
+      <div class="pick-row" id="quest-row"></div>
+
+      <button class="begin-btn" id="begin-btn" onclick="beginStory()" disabled>
+        Begin the Adventure! ✨
+      </button>
+    </div>
+  </div>
+
+  <!-- STORY SCREEN -->
+  <div id="story-screen" style="display:none">
+    <div class="story-top">
+      <button class="top-btn" onclick="goSetup()">← New Story</button>
+      <div class="chapter-dots" id="chapter-dots"></div>
+    </div>
+    <div id="story-content"></div>
+  </div>
+
+  <!-- END SCREEN -->
+  <div id="end-screen" style="display:none">
+    <div class="end-wrap">
+      <div class="end-star">⭐</div>
+      <div class="end-title">The End!</div>
+      <div class="end-sub" id="end-sub"></div>
+      <div class="full-story-card" id="full-story"></div>
+      <div class="end-actions">
+        <button class="btn-gold" onclick="goSetup()">New Story ✨</button>
+        <a class="btn-ghost" href="index.html">Home</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script src="config.js" onerror="void 0"></script>
+<script>
+const MAX_CHAPTERS = 4;
+
+const HEROES = [
+  { emoji: '🗡️', label: 'a brave knight' },
+  { emoji: '🚀', label: 'a space explorer' },
+  { emoji: '🧚', label: 'a magical fairy' },
+  { emoji: '🦊', label: 'a clever fox' },
+  { emoji: '🐲', label: 'a friendly dragon' },
+];
+
+const SETTINGS = [
+  { emoji: '🌲', label: 'an enchanted forest' },
+  { emoji: '🌊', label: 'under the sea' },
+  { emoji: '🏰', label: 'a magic kingdom' },
+  { emoji: '🦕', label: 'a dinosaur jungle' },
+  { emoji: '🚀', label: 'outer space' },
+  { emoji: '🌋', label: 'a mystery island' },
+];
+
+const QUESTS = [
+  { emoji: '💎', label: 'find hidden treasure' },
+  { emoji: '🤝', label: 'rescue a friend' },
+  { emoji: '✨', label: 'discover a magic secret' },
+  { emoji: '🌟', label: 'save the day' },
+  { emoji: '🐾', label: 'make a new friend' },
+  { emoji: '👑', label: 'protect the kingdom' },
+];
+
+function getProvider()    { return localStorage.getItem('cc_provider') || window.CC_PROVIDER || 'anthropic'; }
+function getKey()         { return window.CC_API_KEY || localStorage.getItem('cc_api_key') || ''; }
+function getLocalUrl()    { return localStorage.getItem('cc_local_url') || window.CC_LOCAL_URL || ''; }
+function getLocalModel()  { return localStorage.getItem('cc_local_model') || window.CC_LOCAL_MODEL || ''; }
+function getProfileName() { return localStorage.getItem('cc_profile_name') || ''; }
+function getProfileEmoji(){ return localStorage.getItem('cc_profile_emoji') || ''; }
+
+let selectedHero = null, selectedSetting = null, selectedQuest = null;
+let chapters = [];
+let currentChapter = 0;
+
+async function callLLM(system, userMsg) {
+  const messages = [{ role: 'user', content: userMsg }];
+  if (getProvider() === 'anthropic') {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': getKey(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, system, messages })
+    });
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'API error'); }
+    return (await res.json()).content?.[0]?.text || '';
+  } else {
+    const res = await fetch(getLocalUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: getLocalModel(), messages: [{ role: 'system', content: system }, ...messages] })
+    });
+    if (!res.ok) throw new Error('Local LLM error');
+    return (await res.json()).choices?.[0]?.message?.content || '';
+  }
+}
+
+function makePickRow(containerId, items, type) {
+  const container = document.getElementById(containerId);
+  const name = getProfileName();
+  const allItems = (type === 'hero' && name)
+    ? [{ emoji: getProfileEmoji() || '⭐', label: `a kid named ${name}` }, ...items]
+    : items;
+
+  allItems.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'pick-card';
+    div.innerHTML = `<span class="pick-emoji">${item.emoji}</span><div class="pick-label">${item.label}</div>`;
+    div.onclick = () => {
+      container.querySelectorAll('.pick-card').forEach(c => c.classList.remove('selected'));
+      div.classList.add('selected');
+      if (type === 'hero') selectedHero = item;
+      if (type === 'setting') selectedSetting = item;
+      if (type === 'quest') selectedQuest = item;
+      document.getElementById('begin-btn').disabled = !(selectedHero && selectedSetting && selectedQuest);
+    };
+    container.appendChild(div);
+  });
+}
+
+function renderDots() {
+  const el = document.getElementById('chapter-dots');
+  el.innerHTML = '';
+  for (let i = 0; i < MAX_CHAPTERS; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot-pip' + (i < currentChapter ? ' done' : i === currentChapter ? ' active' : '');
+    el.appendChild(d);
+  }
+}
+
+function addChapterBlock(text, isFinal) {
+  const content = document.getElementById('story-content');
+  const block = document.createElement('div');
+  block.className = 'chapter-block';
+  const label = isFinal ? '✨ The Ending' : `Chapter ${currentChapter + 1}`;
+  block.innerHTML = `
+    <div class="chapter-tag">${label}</div>
+    <div class="chapter-card${isFinal ? ' final' : ''}">${text}</div>
+  `;
+  content.appendChild(block);
+  block.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showChoices(choices) {
+  const content = document.getElementById('story-content');
+  const wrap = document.createElement('div');
+  wrap.id = 'choices-wrap';
+  wrap.innerHTML = `<div class="choice-label">What happens next?</div>`;
+  choices.forEach((choice, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-letter">${['A','B'][i]}</span>${choice}`;
+    btn.onclick = () => pickChoice(choice, wrap);
+    wrap.appendChild(btn);
+  });
+  content.appendChild(wrap);
+  setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+}
+
+function showLoadingCard() {
+  const content = document.getElementById('story-content');
+  const el = document.createElement('div');
+  el.className = 'loading-card';
+  el.innerHTML = `
+    <div class="loading-dots"><div class="ldot"></div><div class="ldot"></div><div class="ldot"></div></div>
+    <div class="loading-text">Writing the next part…</div>
+  `;
+  content.appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  return el;
+}
+
+async function pickChoice(choice, choicesEl) {
+  choicesEl.remove();
+  chapters[chapters.length - 1].choice = choice;
+
+  const label = document.createElement('div');
+  label.className = 'chosen-label';
+  label.textContent = `You chose: "${choice}"`;
+  document.getElementById('story-content').appendChild(label);
+
+  currentChapter++;
+  renderDots();
+  await generateChapter();
+}
+
+async function generateChapter() {
+  const isFinal = currentChapter >= MAX_CHAPTERS - 1;
+  const loading = showLoadingCard();
+
+  const system = `You are a magical storyteller writing a fun adventure story for a child aged 6-9.
+The story: ${selectedHero.label} is in ${selectedSetting.label} and must ${selectedQuest.label}.
+Write warmly, vividly, and with excitement. Use simple words. Keep everything age-appropriate.
+Respond ONLY with valid JSON — no markdown, no code fences, no extra text.`;
+
+  const history = chapters.map(c =>
+    c.story + (c.choice ? `\n\n[Child chose: ${c.choice}]` : '')
+  ).join('\n\n---\n\n');
+
+  let prompt;
+  if (chapters.length === 0) {
+    prompt = `Begin the adventure! Write an exciting opening (3-4 sentences) that sets the scene and introduces the hero. Give exactly 2 short choices (under 8 words each).
+
+Reply with ONLY this JSON:
+{"story": "...", "choices": ["choice A", "choice B"]}`;
+  } else if (isFinal) {
+    prompt = `Story so far:\n${history}\n\nWrite the final chapter (4-5 sentences) with a satisfying, happy ending.
+
+Reply with ONLY this JSON:
+{"story": "...", "choices": []}`;
+  } else {
+    prompt = `Story so far:\n${history}\n\nContinue the adventure (3-4 exciting sentences), then give exactly 2 short choices (under 8 words each).
+
+Reply with ONLY this JSON:
+{"story": "...", "choices": ["choice A", "choice B"]}`;
+  }
+
+  try {
+    const raw = await callLLM(system, prompt);
+    const match = raw.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : raw);
+
+    loading.remove();
+    chapters.push({ story: parsed.story, choice: null });
+    addChapterBlock(parsed.story, isFinal);
+
+    if (isFinal || !parsed.choices?.length) {
+      setTimeout(showEnd, 1000);
+    } else {
+      showChoices(parsed.choices);
+    }
+  } catch(e) {
+    loading.remove();
+    const errEl = document.createElement('div');
+    errEl.style.cssText = 'text-align:center;padding:20px;color:#ff4757;font-size:14px;';
+    errEl.innerHTML = 'Oops! Something went wrong. ';
+    const retry = document.createElement('button');
+    retry.textContent = 'Try again';
+    retry.style.cssText = 'color:#5b6ef5;font-weight:600;background:none;border:none;cursor:pointer;font-size:14px;';
+    retry.onclick = () => { errEl.remove(); generateChapter(); };
+    errEl.appendChild(retry);
+    document.getElementById('story-content').appendChild(errEl);
+  }
+}
+
+function showEnd() {
+  document.getElementById('story-screen').style.display = 'none';
+  document.getElementById('end-screen').style.display = 'block';
+  window.scrollTo(0, 0);
+
+  const name = getProfileName();
+  document.getElementById('end-sub').textContent = name ? `Amazing story, ${name}! 🌟` : 'What an adventure! 🌟';
+
+  const container = document.getElementById('full-story');
+  container.innerHTML = '';
+  chapters.forEach((ch, i) => {
+    const isLast = i === chapters.length - 1;
+    const div = document.createElement('div');
+    div.className = 'fs-chapter';
+    div.innerHTML = `<div class="fs-label">${isLast ? '✨ The Ending' : `Chapter ${i + 1}`}</div><div class="fs-text">${ch.story}</div>`;
+    if (ch.choice) {
+      const choiceEl = document.createElement('div');
+      choiceEl.className = 'fs-choice';
+      choiceEl.textContent = `→ You chose: "${ch.choice}"`;
+      div.appendChild(choiceEl);
+    }
+    container.appendChild(div);
+    if (!isLast) {
+      const hr = document.createElement('hr');
+      hr.className = 'fs-divider';
+      container.appendChild(hr);
+    }
+  });
+}
+
+function beginStory() {
+  chapters = [];
+  currentChapter = 0;
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('story-screen').style.display = 'block';
+  document.getElementById('story-content').innerHTML = '';
+  renderDots();
+  generateChapter();
+}
+
+function goSetup() {
+  chapters = [];
+  currentChapter = 0;
+  selectedHero = selectedSetting = selectedQuest = null;
+  document.getElementById('story-screen').style.display = 'none';
+  document.getElementById('end-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'block';
+  document.querySelectorAll('.pick-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('begin-btn').disabled = true;
+  window.scrollTo(0, 0);
+}
+
+// Boot
+const _hasConfig = getProvider() === 'local' ? (getLocalUrl() && getLocalModel()) : getKey();
+if (_hasConfig) {
+  makePickRow('hero-row', HEROES, 'hero');
+  makePickRow('setting-row', SETTINGS, 'setting');
+  makePickRow('quest-row', QUESTS, 'quest');
+} else {
+  document.getElementById('setup-form').style.display = 'none';
+  document.getElementById('no-key-msg').style.display = 'block';
+}
+</script>
+</body>
+</html>
