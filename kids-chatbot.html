@@ -240,6 +240,7 @@ body {
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="config.js" onerror="void 0"></script>
 <script>
 const CHARACTERS = {
   cartoon: [
@@ -284,7 +285,7 @@ const STARTER_SUGGESTIONS = {
 let currentChar = null;
 let history = [];
 
-function getKey() { return localStorage.getItem('cc_api_key') || ''; }
+function getKey() { return window.CC_API_KEY || localStorage.getItem('cc_api_key') || ''; }
 
 function saveKey() {
   const val = document.getElementById('api-key-input').value.trim();
