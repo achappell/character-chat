@@ -80,11 +80,49 @@ body {
 .setup-btn:active { background: #4454d4; }
 .setup-error { font-size: 13px; color: #ff4757; margin-top: 10px; display: none; }
 
+/* PROFILE SCREEN */
+.profile-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 100vh; padding: 32px 16px; text-align: center;
+}
+.profile-card {
+  background: white; border-radius: 24px; padding: 32px 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 380px;
+}
+.profile-card h2 { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+.profile-card > p { font-size: 14px; color: #777; margin-bottom: 20px; line-height: 1.5; }
+.avatar-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px;
+}
+.avatar-opt {
+  font-size: 28px; border: 2.5px solid transparent; border-radius: 12px;
+  padding: 8px 4px; cursor: pointer; background: #f8f9ff;
+  transition: transform 0.1s;
+}
+.avatar-opt.selected { border-color: #5b6ef5; background: #eef0ff; }
+.avatar-opt:active { transform: scale(0.88); }
+.name-input {
+  width: 100%; border: 1.5px solid #e0e4ff; border-radius: 12px;
+  padding: 14px 16px; font-size: 18px; font-family: inherit;
+  color: #1a1a2e; background: #f8f9ff; margin-bottom: 16px; outline: none;
+  text-align: center;
+}
+.name-input:focus { border-color: #5b6ef5; }
+.profile-skip { font-size: 13px; color: #aaa; margin-top: 12px; cursor: pointer; }
+.profile-skip:hover { color: #777; }
+
 /* PICKER */
 .hero { text-align: center; padding: 28px 16px 16px; }
 .hero h1 { font-size: 26px; font-weight: 700; color: #1a1a2e; line-height: 1.2; }
 .hero h1 span { color: #5b6ef5; }
-.hero p { font-size: 15px; color: #666; margin-top: 6px; }
+.hero-greeting {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 15px; color: #5b6ef5; font-weight: 600;
+  margin-top: 8px; cursor: pointer; padding: 4px 10px;
+  border-radius: 20px; background: #eef0ff;
+}
+.hero-greeting:active { background: #dde3ff; }
+.hero p { font-size: 14px; color: #999; margin-top: 6px; }
 .category-label {
   font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
   text-transform: uppercase; color: #999; margin: 20px 0 10px 4px;
@@ -253,11 +291,26 @@ body {
     </div>
   </div>
 
+  <!-- PROFILE SCREEN -->
+  <div class="screen" id="profile-screen">
+    <div class="profile-wrap">
+      <div class="profile-card">
+        <h2>Who are you? 👋</h2>
+        <p>Pick an avatar and tell us your name so the characters know who they're talking to!</p>
+        <div class="avatar-grid" id="avatar-grid"></div>
+        <input class="name-input" type="text" id="profile-name-input" placeholder="Your name…" maxlength="20" autocomplete="off" autocorrect="off" />
+        <button class="setup-btn" onclick="saveProfile()">Let's go! ✨</button>
+        <div class="profile-skip" onclick="skipProfile()">Skip for now</div>
+      </div>
+    </div>
+  </div>
+
   <!-- PICKER SCREEN -->
   <div class="screen" id="picker-screen">
     <button class="settings-btn" onclick="showSetup()" title="Change API key">⚙️</button>
     <div class="hero">
       <h1>Character <span>Chat</span> ✨</h1>
+      <div id="hero-greeting" style="display:none" onclick="showProfile(true)"></div>
       <p>Pick someone to talk to!</p>
     </div>
     <div class="category-label">Cartoons</div>
@@ -358,6 +411,57 @@ const STARTER_SUGGESTIONS = {
   "Sprunki":   ["Make a beat for me!", "What sound do you make?", "Can we make music together?"],
 };
 
+const AVATARS = ['🦊','🐼','🐸','🦄','🐯','🦁','🐻','🐨','🐱','🐶','🐰','🐧','🌟','🦋','🎮'];
+let _selectedAvatar = '🦊';
+
+function getProfileName()  { return localStorage.getItem('cc_profile_name') || ''; }
+function getProfileEmoji() { return localStorage.getItem('cc_profile_emoji') || ''; }
+
+function buildSystemPrompt(char) {
+  const name = getProfileName();
+  let prompt = char.persona;
+  if (name) prompt += `\n\nThe child you're talking to is named ${name}. Use their name naturally and occasionally in your responses to make them feel special!`;
+  return prompt;
+}
+
+function renderAvatarGrid() {
+  const grid = document.getElementById('avatar-grid');
+  grid.innerHTML = '';
+  AVATARS.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.className = 'avatar-opt' + (emoji === _selectedAvatar ? ' selected' : '');
+    btn.textContent = emoji;
+    btn.onclick = () => {
+      _selectedAvatar = emoji;
+      grid.querySelectorAll('.avatar-opt').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function showProfile(isEdit = false) {
+  _selectedAvatar = getProfileEmoji() || '🦊';
+  renderAvatarGrid();
+  document.getElementById('profile-name-input').value = getProfileName();
+  document.getElementById('setup-screen').classList.remove('active');
+  document.getElementById('picker-screen').classList.remove('active');
+  document.getElementById('chat-screen').classList.remove('active');
+  document.getElementById('profile-screen').classList.add('active');
+  document.getElementById('profile-name-input').focus();
+}
+
+function saveProfile() {
+  const name = document.getElementById('profile-name-input').value.trim();
+  if (name) localStorage.setItem('cc_profile_name', name);
+  localStorage.setItem('cc_profile_emoji', _selectedAvatar);
+  showPicker();
+}
+
+function skipProfile() {
+  showPicker();
+}
+
 let currentChar = null;
 let history = [];
 
@@ -402,7 +506,7 @@ function saveSettings() {
     localStorage.setItem('cc_local_model', model);
   }
   localStorage.setItem('cc_provider', _selectedProvider);
-  showPicker();
+  if (getProfileName()) showPicker(); else showProfile();
 }
 
 function showSetup() {
@@ -418,8 +522,19 @@ function showSetup() {
 
 function showPicker() {
   document.getElementById('setup-screen').classList.remove('active');
+  document.getElementById('profile-screen').classList.remove('active');
   document.getElementById('picker-screen').classList.add('active');
   document.getElementById('chat-screen').classList.remove('active');
+  const name = getProfileName();
+  const emoji = getProfileEmoji();
+  const greetingEl = document.getElementById('hero-greeting');
+  if (name) {
+    greetingEl.className = 'hero-greeting';
+    greetingEl.innerHTML = `${emoji || '👋'} Hi, ${name}! <span style="font-size:12px;opacity:0.7">✏️</span>`;
+    greetingEl.style.display = 'inline-flex';
+  } else {
+    greetingEl.style.display = 'none';
+  }
 }
 
 function renderCharacters() {
@@ -564,7 +679,7 @@ async function sendMessage() {
   history.push({ role: 'user', content: text });
 
   try {
-    const reply = (await callLLM({ system: currentChar.persona, messages: history })) || "Hmm, I got confused! Try again?";
+    const reply = (await callLLM({ system: buildSystemPrompt(currentChar), messages: history })) || "Hmm, I got confused! Try again?";
     history.push({ role: 'assistant', content: reply });
 
     typing.classList.remove('visible');
@@ -591,7 +706,11 @@ document.getElementById('user-input').addEventListener('keydown', e => { if(e.ke
 
 renderCharacters();
 const _hasConfig = getProvider() === 'local' ? (getLocalUrl() && getLocalModel()) : getKey();
-if (_hasConfig) { showPicker(); } else { showSetup(); }
+if (_hasConfig) {
+  if (getProfileName()) showPicker(); else showProfile();
+} else {
+  showSetup();
+}
 </script>
 </body>
 </html>
