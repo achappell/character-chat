@@ -115,21 +115,7 @@ body {
 .hero { text-align: center; padding: 28px 16px 16px; }
 .hero h1 { font-size: 26px; font-weight: 700; color: #1a1a2e; line-height: 1.2; }
 .hero h1 span { color: #5b6ef5; }
-.hero-greeting {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 15px; color: #5b6ef5; font-weight: 600;
-  margin-top: 8px; cursor: pointer; padding: 4px 10px;
-  border-radius: 20px; background: #eef0ff;
-}
-.hero-greeting:active { background: #dde3ff; }
 .hero p { font-size: 14px; color: #999; margin-top: 6px; }
-.provider-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11px; font-weight: 600; padding: 3px 10px;
-  border-radius: 20px; margin-top: 8px; letter-spacing: 0.02em;
-}
-.provider-badge.cloud { background: #eef0ff; color: #5b6ef5; }
-.provider-badge.local { background: #e8f8f0; color: #2ecc71; }
 .category-label {
   font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
   text-transform: uppercase; color: #999; margin: 20px 0 10px 4px;
@@ -150,9 +136,10 @@ body {
 
 /* CHAT */
 #chat-screen.active {
-  position: fixed; inset: 0; z-index: 1;
+  position: fixed; inset: 0; z-index: 210;
   background: #f0f4ff;
 }
+#profile-screen.active { position: fixed; inset: 0; z-index: 210; background: #f0f4ff; }
 .chat-screen-inner {
   display: flex; flex-direction: column;
   height: 100%; height: 100dvh; padding: 12px 12px max(16px, env(safe-area-inset-bottom));
@@ -250,21 +237,6 @@ body {
 }
 .toast.visible { display: block; }
 
-.settings-btn {
-  position: fixed; top: 16px; right: 16px;
-  background: white; border: none; border-radius: 50%;
-  width: 36px; height: 36px; font-size: 18px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; z-index: 10;
-}
-.home-btn {
-  position: fixed; top: 16px; left: 16px;
-  background: white; border: none; border-radius: 20px;
-  padding: 0 14px; height: 36px; font-size: 13px; font-weight: 600;
-  color: #5b6ef5; display: flex; align-items: center; gap: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; z-index: 10;
-  text-decoration: none;
-}
 </style>
 </head>
 <body>
@@ -322,13 +294,9 @@ body {
 
   <!-- PICKER SCREEN -->
   <div class="screen" id="picker-screen">
-    <a class="home-btn" href="index.html">← Home</a>
-    <button class="settings-btn" onclick="showSetup()" title="Change API key">⚙️</button>
     <div class="hero">
       <h1>Character <span>Chat</span> ✨</h1>
-      <div id="hero-greeting" style="display:none" onclick="showProfile(true)"></div>
       <p>Pick someone to talk to!</p>
-      <div id="provider-badge" class="provider-badge"></div>
     </div>
     <div class="category-label">Cartoons</div>
     <div class="characters" id="cartoon-chars"></div>
@@ -371,6 +339,7 @@ body {
 <div class="toast" id="toast"></div>
 
 <script src="config.js" onerror="void 0"></script>
+<script src="header.js"></script>
 <script>
 const CHARACTERS = {
   cartoon: [
@@ -476,6 +445,7 @@ function saveProfile() {
   const name = document.getElementById('profile-name-input').value.trim();
   if (name) localStorage.setItem('cc_profile_name', name);
   localStorage.setItem('cc_profile_emoji', _selectedAvatar);
+  if (window.updateSharedHeader) updateSharedHeader();
   showPicker();
 }
 
@@ -552,24 +522,7 @@ function showPicker() {
   document.getElementById('profile-screen').classList.remove('active');
   document.getElementById('picker-screen').classList.add('active');
   document.getElementById('chat-screen').classList.remove('active');
-  const name = getProfileName();
-  const emoji = getProfileEmoji();
-  const greetingEl = document.getElementById('hero-greeting');
-  if (name) {
-    greetingEl.className = 'hero-greeting';
-    greetingEl.innerHTML = `${emoji || '👋'} Hi, ${name}! <span style="font-size:12px;opacity:0.7">✏️</span>`;
-    greetingEl.style.display = 'inline-flex';
-  } else {
-    greetingEl.style.display = 'none';
-  }
-  const badge = document.getElementById('provider-badge');
-  if (getProvider() === 'anthropic') {
-    badge.className = 'provider-badge cloud';
-    badge.textContent = '☁️ Claude';
-  } else {
-    badge.className = 'provider-badge local';
-    badge.textContent = `🖥️ ${getLocalModel() || 'Local LLM'}`;
-  }
+  if (window.updateSharedHeader) updateSharedHeader();
 }
 
 function renderCharacters() {
@@ -594,6 +547,7 @@ function selectCharacter(char) {
   document.getElementById('messages').innerHTML = '';
   document.getElementById('picker-screen').classList.remove('active');
   document.getElementById('chat-screen').classList.add('active');
+  if (window.setHeaderVisible) setHeaderVisible(false);
 
   // Show static starter chips
   setChips(STARTER_SUGGESTIONS[char.name] || []);
@@ -603,6 +557,7 @@ function selectCharacter(char) {
 
 function goBack() {
   document.getElementById('chat-screen').classList.remove('active');
+  if (window.setHeaderVisible) setHeaderVisible(true);
   showPicker();
   currentChar = null;
   history = [];

@@ -169,24 +169,13 @@ body {
   cursor: pointer; text-decoration: none; display: inline-block;
 }
 .btn-ghost:active { background: #dde3ff; }
-.settings-btn {
-  position: fixed; top: 16px; right: 16px;
-  background: white; border: none; border-radius: 50%;
-  width: 36px; height: 36px; font-size: 18px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; z-index: 10;
-  text-decoration: none;
-}
 </style>
 </head>
 <body>
 <div class="app">
 
-  <a class="settings-btn" href="kids-chatbot.html?settings=1" title="Change API settings">⚙️</a>
-
   <!-- SETUP SCREEN -->
   <div id="setup-screen">
-    <div style="padding-top:16px"><a href="index.html" class="top-btn">← Home</a></div>
     <div class="setup-hero">
       <h1>Story <span>Builder</span> 📖</h1>
       <p>Build your own adventure, one choice at a time!</p>
@@ -237,6 +226,7 @@ body {
 
 </div>
 <script src="config.js" onerror="void 0"></script>
+<script src="header.js"></script>
 <script>
 const MAX_CHAPTERS = 4;
 
