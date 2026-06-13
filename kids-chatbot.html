@@ -24,12 +24,27 @@ body {
 .setup-wrap {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; min-height: 100vh; padding: 32px 16px; text-align: center;
+  overflow-y: auto;
 }
 .setup-card {
   background: white; border-radius: 24px; padding: 32px 24px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 380px;
 }
 .setup-emoji { font-size: 52px; margin-bottom: 16px; }
+@media (max-height: 520px) {
+  .setup-wrap { justify-content: flex-start; padding: 12px 16px; height: 100vh; overflow-y: auto; }
+  .setup-card { padding: 16px 20px; border-radius: 16px; }
+  .setup-emoji { display: none; }
+  .setup-card h2 { font-size: 18px; margin-bottom: 4px; }
+  .setup-card > p { display: none; }
+  .setup-hint { display: none; }
+  .provider-toggle { margin-bottom: 12px; }
+  .provider-btn { padding: 8px 6px; }
+  .provider-btn .pb-icon { font-size: 16px; margin-bottom: 2px; }
+  .setup-label { margin-bottom: 4px; }
+  .key-input { margin-bottom: 8px; }
+  .setup-btn { margin-top: 0; }
+}
 .setup-card h2 { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
 .setup-card > p { font-size: 14px; color: #777; line-height: 1.5; margin-bottom: 20px; }
 .setup-card a { color: #5b6ef5; text-decoration: none; }
@@ -89,9 +104,13 @@ body {
 .char-from { font-size: 11px; color: #999; margin-top: 3px; line-height: 1.3; }
 
 /* CHAT */
+#chat-screen.active {
+  position: fixed; inset: 0; z-index: 1;
+  background: #f0f4ff;
+}
 .chat-screen-inner {
   display: flex; flex-direction: column;
-  height: 100vh; height: -webkit-fill-available; padding: 12px 0 0;
+  height: 100%; height: 100dvh; padding: 12px 12px 0;
 }
 .chat-header {
   display: flex; align-items: center; gap: 12px;
