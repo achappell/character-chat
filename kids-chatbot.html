@@ -404,8 +404,9 @@ Reply with ONLY a JSON array of 3 strings, nothing else. Example: ["question one
       })
     });
     const data = await res.json();
-    const text = data.content?.[0]?.text || '[]';
-    const parsed = JSON.parse(text.trim());
+    const raw = data.content?.[0]?.text || '[]';
+    const jsonMatch = raw.match(/\[[\s\S]*\]/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : '[]');
     if (Array.isArray(parsed) && parsed.length > 0) return parsed.slice(0, 3);
   } catch(e) { /* silently fail */ }
   return [];
