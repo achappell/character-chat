@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Joke Lab">
+<title>Joke Lab 😂</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #fff8f0;
+  min-height: 100vh;
+  color: #1a1a2e;
+}
+.app { max-width: 600px; margin: 0 auto; padding: 0 16px 48px; min-height: 100vh; }
+
+/* PICKER */
+.hero { text-align: center; padding: 36px 0 24px; }
+.hero h1 { font-size: 28px; font-weight: 800; line-height: 1.2; }
+.hero h1 span { color: #f97316; }
+.hero p { font-size: 15px; color: #999; margin-top: 6px; }
+
+.section-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #bbb; margin: 20px 0 10px 2px;
+}
+
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+}
+.topic-card {
+  background: white; border-radius: 16px;
+  padding: 14px 8px; text-align: center; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07); border: 2.5px solid transparent;
+  transition: transform 0.1s; -webkit-user-select: none; user-select: none;
+}
+.topic-card.selected { border-color: #f97316; background: #fff7ed; }
+.topic-card:active { transform: scale(0.93); }
+.topic-emoji { font-size: 28px; display: block; margin-bottom: 5px; }
+.topic-label { font-size: 12px; font-weight: 600; color: #555; line-height: 1.3; }
+
+.free-row {
+  display: flex; gap: 8px; margin-top: 12px;
+}
+.free-input {
+  flex: 1; border: 2px solid #ffe4cc; border-radius: 14px;
+  padding: 12px 14px; font-size: 15px; font-family: inherit; color: #1a1a2e;
+  background: white; outline: none;
+}
+.free-input:focus { border-color: #f97316; }
+
+.go-btn {
+  background: #f97316; border: none; border-radius: 14px;
+  padding: 12px 20px; font-size: 15px; font-weight: 700; color: white; cursor: pointer; flex-shrink: 0;
+}
+.go-btn:active { background: #ea6c10; }
+.go-btn:disabled { background: #fdd5b8; cursor: default; }
+
+.tell-btn {
+  display: block; width: 100%; background: #f97316; border: none;
+  border-radius: 16px; padding: 16px; font-size: 17px; font-weight: 700;
+  color: white; cursor: pointer; margin-top: 24px;
+}
+.tell-btn:disabled { background: #fdd5b8; cursor: default; }
+.tell-btn:active:not(:disabled) { background: #ea6c10; }
+
+/* JOKES SCREEN */
+.jokes-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0 14px;
+}
+.top-btn {
+  background: #fff0e6; border: none; border-radius: 10px;
+  padding: 8px 12px; font-size: 13px; color: #f97316;
+  font-weight: 600; cursor: pointer;
+}
+.top-btn:active { background: #ffe4cc; }
+.topic-pill {
+  background: #fff0e6; color: #f97316; font-size: 13px; font-weight: 700;
+  border-radius: 20px; padding: 6px 12px;
+}
+
+.joke-card {
+  background: white; border-radius: 20px; padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 14px;
+  animation: fadeUp 0.3s ease both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.joke-setup { font-size: 16px; font-weight: 600; color: #1a1a2e; line-height: 1.5; margin-bottom: 12px; }
+.punchline-wrap { position: relative; }
+.punchline {
+  font-size: 16px; color: #f97316; font-weight: 700; line-height: 1.5;
+  filter: blur(6px); transition: filter 0.3s; cursor: pointer; user-select: none;
+}
+.punchline.revealed { filter: none; cursor: default; }
+.punchline-hint {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: #ccc; font-style: italic; pointer-events: none; transition: opacity 0.2s;
+}
+.punchline.revealed + .punchline-hint { opacity: 0; }
+
+.joke-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+.rate-btns { display: flex; gap: 8px; }
+.rate-btn {
+  background: #f8f8f8; border: 2px solid transparent; border-radius: 10px;
+  padding: 6px 12px; font-size: 18px; cursor: pointer; transition: all 0.15s;
+}
+.rate-btn:active { transform: scale(0.88); }
+.rate-btn.active-laugh { background: #fff7ed; border-color: #f97316; }
+.rate-btn.active-groan { background: #f0f0ff; border-color: #8b5cf6; }
+.joke-num { font-size: 11px; color: #ccc; font-weight: 600; }
+
+.loading-card {
+  background: white; border-radius: 20px; padding: 32px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06); text-align: center; margin-bottom: 14px;
+}
+.loading-dots { display: flex; justify-content: center; gap: 7px; margin-bottom: 10px; }
+.ldot {
+  width: 10px; height: 10px; border-radius: 50%; background: #f97316;
+  animation: ldot 1.2s infinite;
+}
+.ldot:nth-child(2) { animation-delay: 0.2s; }
+.ldot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes ldot { 0%,60%,100%{transform:translateY(0);opacity:0.35} 30%{transform:translateY(-8px);opacity:1} }
+.loading-text { font-size: 14px; color: #bbb; font-style: italic; }
+
+.more-btn {
+  display: block; width: 100%; background: #f97316; border: none;
+  border-radius: 16px; padding: 15px; font-size: 16px; font-weight: 700;
+  color: white; cursor: pointer; margin-top: 8px;
+}
+.more-btn:active { background: #ea6c10; }
+
+.no-key-msg {
+  text-align: center; padding: 60px 20px;
+  font-size: 15px; color: #777; line-height: 1.7;
+}
+.no-key-msg a { color: #f97316; text-decoration: none; font-weight: 600; }
+
+@media (max-height: 520px) {
+  .hero { padding: 8px 0 12px; }
+  .hero h1 { font-size: 22px; }
+  .hero p { display: none; }
+  .section-label { margin: 10px 0 6px 2px; }
+  .topic-card { padding: 8px 6px; }
+  .topic-emoji { font-size: 22px; margin-bottom: 3px; }
+  .tell-btn { margin-top: 14px; padding: 12px; font-size: 15px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- PICKER SCREEN -->
+  <div id="picker-screen">
+    <div class="hero">
+      <h1>Joke <span>Lab</span> 😂</h1>
+      <p>Pick a topic and get ready to laugh!</p>
+    </div>
+
+    <div id="no-key-msg" class="no-key-msg" style="display:none">
+      Open <a href="kids-chatbot.html">Character Chat</a> first and enter your API key, then come back!
+    </div>
+
+    <div id="picker-form">
+      <div class="section-label">Pick a topic</div>
+      <div class="topic-grid" id="topic-grid"></div>
+
+      <div class="section-label">Or type your own</div>
+      <div class="free-row">
+        <input id="free-topic" class="free-input" type="text" placeholder="e.g. pizza, dogs, school…" maxlength="40" autocomplete="off" autocorrect="off" />
+        <button class="go-btn" id="free-go-btn" onclick="handleFreeGo()">Go!</button>
+      </div>
+
+      <button class="tell-btn" id="tell-btn" onclick="startJokes()" disabled>Tell me jokes! 😂</button>
+    </div>
+  </div>
+
+  <!-- JOKES SCREEN -->
+  <div id="jokes-screen" style="display:none">
+    <div class="jokes-top">
+      <button class="top-btn" onclick="goBack()">← Topics</button>
+      <div class="topic-pill" id="active-topic-pill"></div>
+    </div>
+    <div id="jokes-content"></div>
+    <button class="more-btn" id="more-btn" onclick="loadMoreJokes()" style="display:none">More jokes! 😂</button>
+  </div>
+
+</div>
+<script src="config.js" onerror="void 0"></script>
+<script src="header.js"></script>
+<script>
+const TOPICS = [
+  { emoji: '🐶', label: 'Animals' },
+  { emoji: '🍕', label: 'Food' },
+  { emoji: '🚀', label: 'Space' },
+  { emoji: '🦕', label: 'Dinosaurs' },
+  { emoji: '🏫', label: 'School' },
+  { emoji: '🦸', label: 'Superheroes' },
+  { emoji: '👻', label: 'Spooky' },
+  { emoji: '⚽', label: 'Sports' },
+  { emoji: '🎮', label: 'Video Games' },
+  { emoji: '🌈', label: 'Silly & Random' },
+];
+
+function getProvider()   { return localStorage.getItem('cc_provider') || window.CC_PROVIDER || 'anthropic'; }
+function getKey()        { return window.CC_API_KEY || localStorage.getItem('cc_api_key') || ''; }
+function getLocalUrl()   { return localStorage.getItem('cc_local_url') || window.CC_LOCAL_URL || ''; }
+function getLocalModel() { return localStorage.getItem('cc_local_model') || window.CC_LOCAL_MODEL || ''; }
+function getProfileName(){ return localStorage.getItem('cc_profile_name') || ''; }
+
+let selectedTopic = null;
+let jokeCount = 0;
+
+async function callLLM(system, userMsg) {
+  const messages = [{ role: 'user', content: userMsg }];
+  if (getProvider() === 'anthropic') {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': getKey(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, system, messages })
+    });
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'API error'); }
+    return (await res.json()).content?.[0]?.text || '';
+  } else {
+    const res = await fetch(getLocalUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: getLocalModel(), messages: [{ role: 'system', content: system }, ...messages] })
+    });
+    if (!res.ok) throw new Error('Local LLM error');
+    return (await res.json()).choices?.[0]?.message?.content || '';
+  }
+}
+
+function buildTopicGrid() {
+  const grid = document.getElementById('topic-grid');
+  TOPICS.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'topic-card';
+    card.innerHTML = `<span class="topic-emoji">${t.emoji}</span><div class="topic-label">${t.label}</div>`;
+    card.onclick = () => {
+      document.getElementById('free-topic').value = '';
+      grid.querySelectorAll('.topic-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedTopic = t.label;
+      document.getElementById('tell-btn').disabled = false;
+    };
+    grid.appendChild(card);
+  });
+}
+
+function handleFreeGo() {
+  const val = document.getElementById('free-topic').value.trim();
+  if (!val) return;
+  selectedTopic = val;
+  document.querySelectorAll('.topic-card').forEach(c => c.classList.remove('selected'));
+  startJokes();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('free-topic').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleFreeGo();
+  });
+  document.getElementById('free-topic').addEventListener('input', () => {
+    const val = document.getElementById('free-topic').value.trim();
+    if (val) {
+      document.querySelectorAll('.topic-card').forEach(c => c.classList.remove('selected'));
+      selectedTopic = val;
+      document.getElementById('tell-btn').disabled = false;
+    } else if (!document.querySelector('.topic-card.selected')) {
+      selectedTopic = null;
+      document.getElementById('tell-btn').disabled = true;
+    }
+  });
+});
+
+function startJokes() {
+  if (!selectedTopic) return;
+  jokeCount = 0;
+  document.getElementById('picker-screen').style.display = 'none';
+  document.getElementById('jokes-screen').style.display = 'block';
+  document.getElementById('jokes-content').innerHTML = '';
+  document.getElementById('more-btn').style.display = 'none';
+
+  const pill = document.getElementById('active-topic-pill');
+  const match = TOPICS.find(t => t.label === selectedTopic);
+  pill.textContent = match ? `${match.emoji} ${selectedTopic}` : `🎤 ${selectedTopic}`;
+
+  window.scrollTo(0, 0);
+  loadMoreJokes();
+}
+
+async function loadMoreJokes() {
+  document.getElementById('more-btn').style.display = 'none';
+  const name = getProfileName();
+
+  const loading = document.createElement('div');
+  loading.className = 'loading-card';
+  loading.innerHTML = `<div class="loading-dots"><div class="ldot"></div><div class="ldot"></div><div class="ldot"></div></div><div class="loading-text">Cooking up jokes…</div>`;
+  document.getElementById('jokes-content').appendChild(loading);
+  loading.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const system = `You write short, funny jokes for children aged 5-10. Keep them clean, simple, and age-appropriate. Format every joke as a setup line and a punchline.`;
+  const prompt = `Give me exactly 3 funny jokes about "${selectedTopic}"${name ? ` for a kid named ${name}` : ''}. Make them silly and easy to understand.
+
+Reply with ONLY valid JSON — no markdown, no extra text:
+{"jokes": [{"setup": "...", "punchline": "..."}, {"setup": "...", "punchline": "..."}, {"setup": "...", "punchline": "..."}]}`;
+
+  try {
+    const raw = await callLLM(system, prompt);
+    const match = raw.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : raw);
+
+    loading.remove();
+    parsed.jokes.forEach(j => {
+      jokeCount++;
+      addJokeCard(j.setup, j.punchline, jokeCount);
+    });
+    document.getElementById('more-btn').style.display = 'block';
+    setTimeout(() => document.getElementById('more-btn').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+  } catch(e) {
+    loading.remove();
+    const errEl = document.createElement('div');
+    errEl.style.cssText = 'text-align:center;padding:20px;color:#ff4757;font-size:14px;';
+    errEl.innerHTML = 'Oops! Something went wrong. ';
+    const retry = document.createElement('button');
+    retry.textContent = 'Try again';
+    retry.style.cssText = 'color:#f97316;font-weight:600;background:none;border:none;cursor:pointer;font-size:14px;';
+    retry.onclick = () => { errEl.remove(); loadMoreJokes(); };
+    errEl.appendChild(retry);
+    document.getElementById('jokes-content').appendChild(errEl);
+  }
+}
+
+function addJokeCard(setup, punchline, num) {
+  const content = document.getElementById('jokes-content');
+  const card = document.createElement('div');
+  card.className = 'joke-card';
+  card.style.animationDelay = `${(num - 1) % 3 * 0.1}s`;
+  card.innerHTML = `
+    <div class="joke-setup">${setup}</div>
+    <div class="punchline-wrap">
+      <div class="punchline" onclick="revealPunchline(this)">${punchline}</div>
+      <div class="punchline-hint">Tap to reveal! 👆</div>
+    </div>
+    <div class="joke-footer">
+      <div class="rate-btns">
+        <button class="rate-btn" onclick="rate(this,'laugh')" title="Haha!">😂</button>
+        <button class="rate-btn" onclick="rate(this,'groan')" title="Groan">🙄</button>
+      </div>
+      <div class="joke-num">#${num}</div>
+    </div>
+  `;
+  content.appendChild(card);
+}
+
+function revealPunchline(el) {
+  el.classList.add('revealed');
+}
+
+function rate(btn, type) {
+  const btns = btn.parentElement.querySelectorAll('.rate-btn');
+  btns.forEach(b => b.classList.remove('active-laugh', 'active-groan'));
+  btn.classList.add(type === 'laugh' ? 'active-laugh' : 'active-groan');
+}
+
+function goBack() {
+  document.getElementById('jokes-screen').style.display = 'none';
+  document.getElementById('picker-screen').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+// Boot
+const _hasConfig = getProvider() === 'local' ? (getLocalUrl() && getLocalModel()) : getKey();
+if (_hasConfig) {
+  buildTopicGrid();
+} else {
+  document.getElementById('picker-form').style.display = 'none';
+  document.getElementById('no-key-msg').style.display = 'block';
+}
+</script>
+</body>
+</html>
