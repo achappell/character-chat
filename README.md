@@ -13,6 +13,9 @@ Build your own choose-your-own-adventure story. Pick a hero, a world, and a ques
 ### 😂 Joke Lab
 Pick a topic (or type your own) and get a batch of kid-friendly jokes with blurred punchlines to tap and reveal. Rate each joke 😂 or 🙄 and load more infinitely.
 
+### 🎭 Mad Libs
+Pick a theme (Space Adventure, Pirate Ship, Fairy Tale, and more), fill in 8 word slots — each with quick-tap suggestions or free entry — then watch the AI write a silly story using every word, highlighted in purple.
+
 ## Features
 
 - Shared header across all pages — profile name + emoji avatar, active model indicator, quick settings access
@@ -46,6 +49,7 @@ index.html          # Landing page
 kids-chatbot.html   # Character Chat
 story-builder.html  # Story Builder
 joke-lab.html       # Joke Lab
+mad-libs.html       # Mad Libs
 header.js           # Shared header component (injected on all pages)
 config.js           # Dev-only key injection (gitignored)
 ```
@@ -57,4 +61,5 @@ config.js           # Dev-only key injection (gitignored)
   - Character Chat: `claude-sonnet-4-6`
   - Story Builder: `claude-sonnet-4-6`
   - Joke Lab: `claude-haiku-4-5` (faster for short content)
+  - Mad Libs: `claude-haiku-4-5` (faster for short content)
 - Hosted on GitHub Pages
