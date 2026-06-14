@@ -189,6 +189,15 @@ body {
 }
 .msg.user .msg-bubble { background: #5b6ef5; color: white; border-bottom-right-radius: 4px; }
 .msg-avatar { font-size: 22px; flex-shrink: 0; margin-bottom: 2px; }
+.msg-bubble-wrap { display: flex; flex-direction: column; }
+.msg-name-label { font-size: 10px; font-weight: 700; color: #aaa; margin-bottom: 3px; padding-left: 3px; }
+.group-avatars { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; }
+.group-avatar-mini { width: 36px; height: 36px; border-radius: 8px; image-rendering: pixelated; image-rendering: crisp-edges; }
+.group-avatar-mini-emoji { font-size: 26px; line-height: 1; }
+.char-card.group-card { border: 2px solid #eef0ff; }
+.chat-header-group { display: flex; gap: 4px; align-items: center; }
+.chat-header-group img { width: 30px; height: 30px; border-radius: 6px; image-rendering: pixelated; image-rendering: crisp-edges; }
+.chat-header-group span { font-size: 24px; }
 
 .typing-indicator {
   display: none; align-items: center; gap: 5px;
@@ -314,6 +323,8 @@ body {
       <h1>Character <span>Chat</span> ✨</h1>
       <p>Pick someone to talk to!</p>
     </div>
+    <div class="category-label">Group Chats</div>
+    <div class="characters" id="group-chars"></div>
     <div class="category-label">Cartoons</div>
     <div class="characters" id="cartoon-chars"></div>
     <div class="category-label">Video games</div>
@@ -414,6 +425,97 @@ const CHARACTERS = {
   ]
 };
 
+const GROUPS = [
+  {
+    name: "Amy & Rory",
+    from: "Doctor Who — The Ponds",
+    members: [
+      { name: "Amy",  emoji: "🌙", image: "images/doctors/companion-amy.png" },
+      { name: "Rory", emoji: "👨", image: "images/doctors/companion-rory.png" },
+    ],
+    starters: ["What's it like travelling together?", "Do you ever argue?", "Tell me about the Doctor!"],
+    opening: "Amy: Oh brilliant, you found us! I'm Amy Pond — and this is Rory.\nRory: Hi! We travel through time and space. It's a lot. *glances at you* What would you like to know?",
+    persona: `You are playing BOTH Amy Pond AND Rory Williams from Doctor Who in a group chat with a child aged 6-9.
+
+Format every response as a short conversation, like this:
+Amy: [Amy's line]
+Rory: [Rory's line]
+
+Rules:
+- Each character speaks 1-2 sentences max per turn. Total response: 2-4 lines.
+- Always end with one of them naturally inviting the child to respond — a question, a look, or a playful pause directed at the child.
+- Amy is bold, funny, and adventurous. Rory is sweet, gentle, quietly brave, and a little self-deprecating.
+- They love each other and have warm banter, but never get so wrapped up in each other that they forget the child.
+- Safe for kids aged 6-9. Never break character.`
+  },
+  {
+    name: "Lilo & Stitch",
+    from: "Lilo & Stitch",
+    members: [
+      { name: "Lilo",   emoji: "🌺", image: null },
+      { name: "Stitch", emoji: "💙", image: null },
+    ],
+    starters: ["What does ohana mean?", "Do you like Elvis?", "Stitch, say something alien!"],
+    opening: "Lilo: Hi! I'm Lilo, and this is Stitch. He's my best friend — and also a little alien.\nStitch: Ih! *waves enthusiastically* Meega happy you here!\nLilo: *looks at you* Do you want to be part of our ohana?",
+    persona: `You are playing BOTH Lilo AND Stitch from Lilo & Stitch in a group chat with a child aged 6-9.
+
+Format every response like this:
+Lilo: [Lilo's line]
+Stitch: [Stitch's line]
+
+Rules:
+- Each character speaks 1-2 sentences max. Total response: 2-4 lines.
+- Always end by inviting the child to respond — a question or a playful moment directed at them.
+- Lilo is quirky, creative, deeply loyal, and obsessed with Elvis. She speaks warmly and a little dramatically.
+- Stitch speaks in broken English mixed with alien sounds like "Ih!", "Naga!", "Meega". He is chaotic but sweet and loving.
+- They are best friends and ohana. Safe for kids aged 6-9. Never break character.`
+  },
+  {
+    name: "Ponyo & Sosuke",
+    from: "Ponyo",
+    members: [
+      { name: "Ponyo",  emoji: "🌊", image: null },
+      { name: "Sosuke", emoji: "⛵", image: null },
+    ],
+    starters: ["Do you like ham?", "What's the ocean like?", "Tell me about the magic waves!"],
+    opening: "Ponyo: PONYO LOVES NEW FRIEND! Hi hi hi!\nSosuke: *smiles* She gets excited about everyone. I'm Sosuke. We live by the sea — Ponyo used to be a fish!\nPonyo: *bounces* Fish girl! Now human! What is your name?",
+    persona: `You are playing BOTH Ponyo AND Sosuke from the Studio Ghibli movie Ponyo in a group chat with a child aged 6-9.
+
+Format every response like this:
+Ponyo: [Ponyo's line]
+Sosuke: [Sosuke's line]
+
+Rules:
+- Each character speaks 1-2 sentences max. Total response: 2-4 lines.
+- Always end by inviting the child to respond.
+- Ponyo speaks in simple, explosive bursts of joy. She loves ham, ramen, Sosuke, and everything about the human world. She is pure excitement.
+- Sosuke is calm, kind, gentle, and very serious about keeping promises. He speaks simply but warmly.
+- Safe for kids aged 6-9. Never break character.`
+  },
+  {
+    name: "Satsuki & Mei",
+    from: "My Neighbor Totoro",
+    members: [
+      { name: "Satsuki", emoji: "🌳", image: null },
+      { name: "Mei",     emoji: "🌿", image: null },
+    ],
+    starters: ["Have you seen Totoro?", "What's the Catbus like?", "Tell me about the forest spirits!"],
+    opening: "Mei: I FOUND TOTORO! Did you know about Totoro?! He's HUGE and fluffy and— \nSatsuki: *laughs* Mei, let them say hello first! Sorry — I'm Satsuki, and this is my little sister Mei. We just moved to the countryside!\nMei: *tugs your sleeve* Have YOU ever seen a forest spirit?",
+    persona: `You are playing BOTH Satsuki AND Mei Kusakabe from My Neighbor Totoro in a group chat with a child aged 6-9.
+
+Format every response like this:
+Satsuki: [Satsuki's line]
+Mei: [Mei's line]
+
+Rules:
+- Each character speaks 1-2 sentences max. Total response: 2-4 lines.
+- Always end by inviting the child to respond.
+- Satsuki is responsible, warm, and brave — she looks after Mei and speaks gently but with excitement about the forest.
+- Mei is a very energetic 4-year-old: she speaks in bursts, gets very excited, and sometimes interrupts. She talks like a little kid.
+- Safe for kids aged 6-9. Never break character.`
+  },
+];
+
 const STARTER_SUGGESTIONS = {
   "SpongeBob": ["What's a Krabby Patty?", "Do you like jellyfishing?", "Tell me a joke!"],
   "Bluey":     ["What game should we play?", "Tell me about Bingo!", "What's your fave adventure?"],
@@ -512,6 +614,7 @@ function skipProfile() {
 }
 
 let currentChar = null;
+let currentGroup = null;
 let history = [];
 
 function getProvider() { return localStorage.getItem('cc_provider') || window.CC_PROVIDER || 'anthropic'; }
@@ -626,21 +729,79 @@ function goBack() {
   if (window.setHeaderVisible) setHeaderVisible(true);
   showPicker();
   currentChar = null;
+  currentGroup = null;
   history = [];
 }
 
-function addMessage(role, text) {
+function addMessage(role, text, member = null) {
   const msgs = document.getElementById('messages');
   const div = document.createElement('div');
   div.className = `msg ${role}`;
-  const avatarHtml = currentChar.image
-    ? `<img class="msg-avatar-img" src="${currentChar.image}" alt="${currentChar.name}">`
-    : `<span class="msg-avatar">${currentChar.emoji}</span>`;
-  div.innerHTML = role === 'bot'
-    ? `${avatarHtml}<div class="msg-bubble">${text}</div>`
-    : `<div class="msg-bubble">${text}</div>`;
+  if (role === 'bot') {
+    const char = member || currentChar;
+    const avatarHtml = char.image
+      ? `<img class="msg-avatar-img" src="${char.image}" alt="${char.name}">`
+      : `<span class="msg-avatar">${char.emoji}</span>`;
+    const nameLabel = currentGroup ? `<div class="msg-name-label">${char.name}</div>` : '';
+    div.innerHTML = `${avatarHtml}<div class="msg-bubble-wrap">${nameLabel}<div class="msg-bubble">${text}</div></div>`;
+  } else {
+    div.innerHTML = `<div class="msg-bubble">${text}</div>`;
+  }
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+}
+
+function parseGroupResponse(text, members) {
+  const lines = text.split('\n').filter(l => l.trim());
+  const bubbles = [];
+  for (const line of lines) {
+    let matched = false;
+    for (const member of members) {
+      if (line.startsWith(member.name + ':')) {
+        bubbles.push({ member, text: line.slice(member.name.length + 1).trim() });
+        matched = true;
+        break;
+      }
+    }
+    if (!matched && line.trim() && bubbles.length > 0) {
+      bubbles[bubbles.length - 1].text += ' ' + line.trim();
+    }
+  }
+  return bubbles.length > 0 ? bubbles : [{ member: members[0], text }];
+}
+
+function selectGroup(group) {
+  currentGroup = group;
+  currentChar = null;
+  history = [];
+  const emojiEl = document.getElementById('chat-emoji');
+  emojiEl.innerHTML = `<div class="chat-header-group">${group.members.map(m =>
+    m.image ? `<img src="${m.image}" alt="${m.name}">` : `<span>${m.emoji}</span>`
+  ).join('')}</div>`;
+  document.getElementById('chat-name').textContent = group.name;
+  document.getElementById('chat-from').textContent = group.from;
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('picker-screen').classList.remove('active');
+  document.getElementById('chat-screen').classList.add('active');
+  if (window.setHeaderVisible) setHeaderVisible(false);
+  setChips(group.starters || []);
+  parseGroupResponse(group.opening, group.members).forEach(b => addMessage('bot', b.text, b.member));
+}
+
+function renderGroups() {
+  const container = document.getElementById('group-chars');
+  GROUPS.forEach(group => {
+    const div = document.createElement('div');
+    div.className = 'char-card group-card';
+    const avatarsHtml = `<div class="group-avatars">${group.members.map(m =>
+      m.image
+        ? `<img class="group-avatar-mini" src="${m.image}" alt="${m.name}">`
+        : `<span class="group-avatar-mini-emoji">${m.emoji}</span>`
+    ).join('')}</div>`;
+    div.innerHTML = `${avatarsHtml}<div class="char-name">${group.name}</div><div class="char-from">${group.from}</div>`;
+    div.onclick = () => selectGroup(group);
+    container.appendChild(div);
+  });
 }
 
 function setChips(suggestions, loading = false) {
@@ -695,10 +856,12 @@ async function callLLM({ system, messages, maxTokens = 1000 }) {
 }
 
 async function fetchSuggestions(characterReply, userMessage) {
-  const suggestionPrompt = `A child (age 6-9) is chatting with ${currentChar.name} from ${currentChar.from}.
+  const chatName = currentGroup ? currentGroup.name : currentChar.name;
+  const chatFrom = currentGroup ? currentGroup.from : currentChar.from;
+  const suggestionPrompt = `A child (age 6-9) is chatting with ${chatName} from ${chatFrom}.
 
 The child just said: "${userMessage}"
-${currentChar.name} just replied: "${characterReply}"
+They just replied: "${characterReply}"
 
 Generate exactly 3 short, fun follow-up things the child could say or ask next, staying in the spirit of the conversation. Each should be under 8 words. Make them feel natural, playful, and different from each other.
 
@@ -724,12 +887,12 @@ async function sendMessage() {
   const input = document.getElementById('user-input');
   const btn = document.getElementById('send-btn');
   const text = input.value.trim();
-  if (!text || !currentChar) return;
+  if (!text || (!currentChar && !currentGroup)) return;
 
   input.value = '';
   btn.disabled = true;
   addMessage('user', text);
-  setChips([], false); // clear chips while thinking
+  setChips([], false);
 
   const typing = document.getElementById('typing');
   typing.classList.add('visible');
@@ -738,23 +901,31 @@ async function sendMessage() {
   history.push({ role: 'user', content: text });
 
   try {
-    const reply = (await callLLM({ system: buildSystemPrompt(currentChar), messages: history })) || "Hmm, I got confused! Try again?";
+    const system = currentGroup
+      ? (getProfileName() ? currentGroup.persona + `\n\nThe child's name is ${getProfileName()}. Use their name naturally sometimes.` : currentGroup.persona)
+      : buildSystemPrompt(currentChar);
+    const reply = (await callLLM({ system, messages: history })) || "Hmm, I got confused! Try again?";
     history.push({ role: 'assistant', content: reply });
 
     typing.classList.remove('visible');
-    addMessage('bot', reply);
+    if (currentGroup) {
+      parseGroupResponse(reply, currentGroup.members).forEach(b => addMessage('bot', b.text, b.member));
+    } else {
+      addMessage('bot', reply);
+    }
     document.getElementById('messages').scrollTop = 99999;
 
-    // Show loading chips, then fetch smart suggestions in background
     setChips([], true);
     const suggestions = await fetchSuggestions(reply, text);
-    setChips(suggestions.length > 0 ? suggestions : STARTER_SUGGESTIONS[currentChar.name] || []);
+    const fallback = currentGroup ? (currentGroup.starters || []) : (STARTER_SUGGESTIONS[currentChar.name] || []);
+    setChips(suggestions.length > 0 ? suggestions : fallback);
 
   } catch(e) {
     typing.classList.remove('visible');
     showToast('Oops! Something went wrong — try again!');
     history.pop();
-    setChips(STARTER_SUGGESTIONS[currentChar.name] || []);
+    const fallback = currentGroup ? (currentGroup.starters || []) : (STARTER_SUGGESTIONS[currentChar.name] || []);
+    setChips(fallback);
   }
 
   btn.disabled = false;
@@ -764,6 +935,7 @@ async function sendMessage() {
 document.getElementById('user-input').addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
 
 renderCharacters();
+renderGroups();
 const _forceSettings = new URLSearchParams(location.search).get('settings');
 const _hasConfig = getProvider() === 'local' ? (getLocalUrl() && getLocalModel()) : getKey();
 if (_forceSettings) {
