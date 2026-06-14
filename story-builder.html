@@ -81,13 +81,7 @@ body {
 }
 .top-btn:active { background: #dde3ff; }
 
-.chapter-dots { display: flex; gap: 7px; align-items: center; }
-.dot-pip {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #d0d8ff; transition: all 0.25s;
-}
-.dot-pip.done { background: #f59e0b; }
-.dot-pip.active { background: #5b6ef5; width: 22px; border-radius: 4px; }
+.chapter-count { font-size: 12px; font-weight: 600; color: #aaa; }
 
 .chapter-block { margin-bottom: 20px; }
 .chapter-tag {
@@ -219,7 +213,7 @@ body {
   <div id="story-screen" style="display:none">
     <div class="story-top">
       <button class="top-btn" onclick="goSetup()">← New Story</button>
-      <div class="chapter-dots" id="chapter-dots"></div>
+      <div class="chapter-count" id="chapter-count"></div>
     </div>
     <div id="story-content"></div>
   </div>
@@ -242,8 +236,6 @@ body {
 <script src="config.js" onerror="void 0"></script>
 <script src="header.js"></script>
 <script>
-const MAX_CHAPTERS = 4;
-
 const HEROES = [
   { emoji: '🗡️', label: 'a brave knight' },
   { emoji: '🚀', label: 'a space explorer' },
@@ -280,6 +272,7 @@ function getProfileEmoji(){ return localStorage.getItem('cc_profile_emoji') || '
 let selectedHero = null, selectedSetting = null, selectedQuest = null;
 let chapters = [];
 let currentChapter = 0;
+let ending = false;
 
 async function callLLM(system, userMsg) {
   const messages = [{ role: 'user', content: userMsg }];
@@ -330,14 +323,9 @@ function makePickRow(containerId, items, type) {
   });
 }
 
-function renderDots() {
-  const el = document.getElementById('chapter-dots');
-  el.innerHTML = '';
-  for (let i = 0; i < MAX_CHAPTERS; i++) {
-    const d = document.createElement('div');
-    d.className = 'dot-pip' + (i < currentChapter ? ' done' : i === currentChapter ? ' active' : '');
-    el.appendChild(d);
-  }
+function renderChapterCount() {
+  document.getElementById('chapter-count').textContent =
+    currentChapter === 0 ? '' : `Chapter ${currentChapter}`;
 }
 
 function addChapterBlock(text, isFinal) {
@@ -386,6 +374,13 @@ function showChoices(choices) {
   freeRow.appendChild(goBtn);
   wrap.appendChild(freeRow);
 
+  const endBtn = document.createElement('button');
+  endBtn.className = 'top-btn';
+  endBtn.style.cssText = 'display:block;margin:14px auto 0;font-size:13px;';
+  endBtn.textContent = '🏁 End my story';
+  endBtn.onclick = () => { ending = true; pickChoice('end the story with a happy ending', wrap); };
+  wrap.appendChild(endBtn);
+
   content.appendChild(wrap);
   setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
 }
@@ -407,18 +402,20 @@ async function pickChoice(choice, choicesEl) {
   choicesEl.remove();
   chapters[chapters.length - 1].choice = choice;
 
-  const label = document.createElement('div');
-  label.className = 'chosen-label';
-  label.textContent = `You chose: "${choice}"`;
-  document.getElementById('story-content').appendChild(label);
+  if (!ending) {
+    const label = document.createElement('div');
+    label.className = 'chosen-label';
+    label.textContent = `You chose: "${choice}"`;
+    document.getElementById('story-content').appendChild(label);
+  }
 
   currentChapter++;
-  renderDots();
+  renderChapterCount();
   await generateChapter();
 }
 
 async function generateChapter() {
-  const isFinal = currentChapter >= MAX_CHAPTERS - 1;
+  const isFinal = ending;
   const loading = showLoadingCard();
 
   const system = `You are a magical storyteller writing a fun adventure story for a child aged 6-9.
@@ -437,7 +434,7 @@ Respond ONLY with valid JSON — no markdown, no code fences, no extra text.`;
 Reply with ONLY this JSON:
 {"story": "...", "choices": ["choice A", "choice B", "choice C"]}`;
   } else if (isFinal) {
-    prompt = `Story so far:\n${history}\n\nWrite the final chapter (4-5 sentences) with a satisfying, happy ending.
+    prompt = `Story so far:\n${history}\n\nWrite the final chapter (4-5 sentences) with a satisfying, happy ending. Wrap everything up beautifully.
 
 Reply with ONLY this JSON:
 {"story": "...", "choices": []}`;
@@ -509,16 +506,18 @@ function showEnd() {
 function beginStory() {
   chapters = [];
   currentChapter = 0;
+  ending = false;
   document.getElementById('setup-screen').style.display = 'none';
   document.getElementById('story-screen').style.display = 'block';
   document.getElementById('story-content').innerHTML = '';
-  renderDots();
+  renderChapterCount();
   generateChapter();
 }
 
 function goSetup() {
   chapters = [];
   currentChapter = 0;
+  ending = false;
   selectedHero = selectedSetting = selectedQuest = null;
   document.getElementById('story-screen').style.display = 'none';
   document.getElementById('end-screen').style.display = 'none';
