@@ -358,7 +358,7 @@ function showChoices(choices) {
   const wrap = document.createElement('div');
   wrap.id = 'choices-wrap';
   wrap.innerHTML = `<div class="choice-label">What happens next?</div>`;
-  const letters = ['A','B','C','D','E'];
+  const letters = ['A','B','C'];
   choices.forEach((choice, i) => {
     const btn = document.createElement('button');
     btn.className = 'choice-btn';
@@ -432,20 +432,20 @@ Respond ONLY with valid JSON — no markdown, no code fences, no extra text.`;
 
   let prompt;
   if (chapters.length === 0) {
-    prompt = `Begin the adventure! Write an exciting opening (3-4 sentences) that sets the scene and introduces the hero. Give exactly 5 different short choices (under 10 words each) — make them varied and fun!
+    prompt = `Begin the adventure! Write an exciting opening (3-4 sentences) that sets the scene and introduces the hero. Give exactly 3 different short choices (under 10 words each) — make them varied and fun!
 
 Reply with ONLY this JSON:
-{"story": "...", "choices": ["choice A", "choice B", "choice C", "choice D", "choice E"]}`;
+{"story": "...", "choices": ["choice A", "choice B", "choice C"]}`;
   } else if (isFinal) {
     prompt = `Story so far:\n${history}\n\nWrite the final chapter (4-5 sentences) with a satisfying, happy ending.
 
 Reply with ONLY this JSON:
 {"story": "...", "choices": []}`;
   } else {
-    prompt = `Story so far:\n${history}\n\nContinue the adventure (3-4 exciting sentences), then give exactly 5 different short choices (under 10 words each) — make them varied and fun!
+    prompt = `Story so far:\n${history}\n\nContinue the adventure (3-4 exciting sentences), then give exactly 3 different short choices (under 10 words each) — make them varied and fun!
 
 Reply with ONLY this JSON:
-{"story": "...", "choices": ["choice A", "choice B", "choice C", "choice D", "choice E"]}`;
+{"story": "...", "choices": ["choice A", "choice B", "choice C"]}`;
   }
 
   try {
