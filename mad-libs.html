@@ -71,14 +71,22 @@ body {
   font-weight: 500;
 }
 
-.word-field { margin-bottom: 14px; }
+.word-field { margin-bottom: 18px; }
 .word-label {
   font-size: 11px; font-weight: 700; letter-spacing: 0.07em;
-  text-transform: uppercase; color: #8b5cf6; margin-bottom: 5px; display: block;
+  text-transform: uppercase; color: #8b5cf6; margin-bottom: 7px; display: block;
 }
+.suggestion-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 8px; }
+.chip {
+  background: white; border: 2px solid #e8e0ff; border-radius: 20px;
+  padding: 5px 13px; font-size: 14px; font-weight: 500; color: #555;
+  cursor: pointer; transition: all 0.12s; -webkit-user-select: none; user-select: none;
+}
+.chip:active { transform: scale(0.92); }
+.chip.selected { background: #8b5cf6; border-color: #8b5cf6; color: white; font-weight: 700; }
 .word-input {
   width: 100%; border: 2px solid #e8e0ff; border-radius: 12px;
-  padding: 12px 14px; font-size: 16px; font-family: inherit; color: #1a1a2e;
+  padding: 11px 14px; font-size: 15px; font-family: inherit; color: #1a1a2e;
   background: white; outline: none; transition: border-color 0.15s;
 }
 .word-input:focus { border-color: #8b5cf6; }
@@ -230,14 +238,14 @@ const THEMES = [
 ];
 
 const WORD_SLOTS = [
-  { key: 'noun',      label: 'A noun (person, place, or thing)',  placeholder: 'e.g. banana, robot, shoe' },
-  { key: 'adjective', label: 'An adjective (describing word)',     placeholder: 'e.g. wiggly, purple, stinky' },
-  { key: 'verb_ing',  label: 'A verb ending in -ing',             placeholder: 'e.g. jumping, sneezing, dancing' },
-  { key: 'animal',    label: 'An animal',                          placeholder: 'e.g. penguin, hamster, platypus' },
-  { key: 'food',      label: 'A food',                             placeholder: 'e.g. spaghetti, pickles, cupcake' },
-  { key: 'silly',     label: 'A silly made-up word',              placeholder: 'e.g. blorbfizzle, snurp, gloopie' },
-  { key: 'number',    label: 'A number',                           placeholder: 'e.g. 47, 1000, 3' },
-  { key: 'body_part', label: 'A body part',                        placeholder: 'e.g. elbow, nostril, kneecap' },
+  { key: 'noun',      label: 'A noun (person, place, or thing)',  placeholder: 'or type your own…', suggestions: ['banana', 'robot', 'toilet', 'spaceship'] },
+  { key: 'adjective', label: 'An adjective (describing word)',     placeholder: 'or type your own…', suggestions: ['wiggly', 'smelly', 'gigantic', 'sparkly'] },
+  { key: 'verb_ing',  label: 'A verb ending in -ing',             placeholder: 'or type your own…', suggestions: ['sneezing', 'wobbling', 'burping', 'hopping'] },
+  { key: 'animal',    label: 'An animal',                          placeholder: 'or type your own…', suggestions: ['penguin', 'platypus', 'wombat', 'narwhal'] },
+  { key: 'food',      label: 'A food',                             placeholder: 'or type your own…', suggestions: ['spaghetti', 'pickles', 'cupcake', 'broccoli'] },
+  { key: 'silly',     label: 'A silly made-up word',              placeholder: 'or type your own…', suggestions: ['blorbfizzle', 'snurp', 'gloopie', 'wubble'] },
+  { key: 'number',    label: 'A number',                           placeholder: 'or type your own…', suggestions: ['47', '1000', '3', '99'] },
+  { key: 'body_part', label: 'A body part',                        placeholder: 'or type your own…', suggestions: ['elbow', 'nostril', 'kneecap', 'earlobe'] },
 ];
 
 function getProvider()   { return localStorage.getItem('cc_provider') || window.CC_PROVIDER || 'anthropic'; }
@@ -302,9 +310,15 @@ function buildWordFields() {
   WORD_SLOTS.forEach(slot => {
     const wrap = document.createElement('div');
     wrap.className = 'word-field';
+
     const label = document.createElement('label');
     label.className = 'word-label';
     label.textContent = slot.label;
+    wrap.appendChild(label);
+
+    const chipsRow = document.createElement('div');
+    chipsRow.className = 'suggestion-chips';
+
     const input = document.createElement('input');
     input.className = 'word-input';
     input.type = 'text';
@@ -312,13 +326,32 @@ function buildWordFields() {
     input.autocomplete = 'off';
     input.autocorrect = 'off';
     input.maxLength = 40;
+
+    slot.suggestions.forEach(s => {
+      const chip = document.createElement('button');
+      chip.className = 'chip';
+      chip.type = 'button';
+      chip.textContent = s;
+      chip.onclick = () => {
+        chipsRow.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        input.value = s;
+        input.classList.add('filled');
+        wordValues[slot.key] = s;
+        checkReady();
+      };
+      chipsRow.appendChild(chip);
+    });
+
     input.addEventListener('input', () => {
       const v = input.value.trim();
+      chipsRow.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
       input.classList.toggle('filled', !!v);
-      wordValues[slot.key] = v;
+      wordValues[slot.key] = v || undefined;
       checkReady();
     });
-    wrap.appendChild(label);
+
+    wrap.appendChild(chipsRow);
     wrap.appendChild(input);
     container.appendChild(wrap);
   });
