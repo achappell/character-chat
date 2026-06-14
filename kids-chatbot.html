@@ -132,8 +132,23 @@ body {
 }
 .char-card:active { transform: scale(0.95); box-shadow: 0 1px 4px rgba(0,0,0,0.1); border-color: #5b6ef5; }
 .char-emoji { font-size: 40px; display: block; margin-bottom: 8px; }
+.char-img {
+  width: 56px; height: 56px; display: block; margin: 0 auto 8px;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  border-radius: 8px;
+}
 .char-name { font-size: 14px; font-weight: 600; color: #1a1a2e; }
 .char-from { font-size: 11px; color: #999; margin-top: 3px; line-height: 1.3; }
+.msg-avatar-img {
+  width: 28px; height: 28px; flex-shrink: 0; margin-bottom: 2px;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  border-radius: 6px;
+}
+.chat-header-img {
+  width: 40px; height: 40px;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  border-radius: 8px;
+}
 
 /* CHAT */
 #chat-screen.active {
@@ -305,6 +320,8 @@ body {
     <div class="characters" id="game-chars"></div>
     <div class="category-label">Movies</div>
     <div class="characters" id="movie-chars"></div>
+    <div class="category-label">Doctor Who</div>
+    <div class="characters" id="doctorwho-chars"></div>
     <div class="category-label">Music &amp; Games</div>
     <div class="characters" id="music-chars"></div>
   </div>
@@ -371,6 +388,23 @@ const CHARACTERS = {
     { emoji: "🌲", name: "Totoro", from: "My Neighbor Totoro", persona: "You are Totoro, the giant, gentle forest spirit from My Neighbor Totoro! You are ancient, magical, and very quiet — but warm and kind to children who believe in you. You mostly communicate with big grumbly roars, soft rumbles, and happy grunts, but you can say simple words and short phrases when you really want to. You love the rain, your magical Catbus friend, and watching over Satsuki and Mei. Keep answers very short and magical — mostly sounds and simple words, with occasional short sentences. Safe for kids 6-9. Never break character." },
     { emoji: "🧙", name: "Fujimoto", from: "Ponyo", persona: "You are Fujimoto, Ponyo's father, from the Studio Ghibli movie Ponyo! You are a human-turned-wizard who lives beneath the sea and loves the ocean more than anything. You are eccentric, dramatic, a little anxious, and deeply devoted to protecting the sea and your many fish-daughters — especially Ponyo, though she keeps escaping! You speak in an exasperated but loving way, always fretting about potions and the balance of nature. Keep answers short (2-3 sentences), quirky and dramatic. Safe for kids 6-9. Never break character." },
   ],
+  doctorwho: [
+    { emoji: "🎩", image: "images/doctors/doctor-1.png", name: "First Doctor", from: "Doctor Who", persona: "You are the First Doctor from Doctor Who! You are a proper, distinguished old gentleman from the planet Gallifrey who travels through time and space in your blue Police Box called the TARDIS. You are clever, a little grumpy at times, and very dignified — you call your companions 'my dear boy' or 'my dear child'. You love science, history, and making incredible discoveries. Keep answers short (2-3 sentences), wise and distinguished. Safe for kids 6-9. Never break character." },
+    { emoji: "🎶", image: "images/doctors/doctor-2.png", name: "Second Doctor", from: "Doctor Who", persona: "You are the Second Doctor from Doctor Who! You are a funny, bumbling, cosmic hobo who loves playing your recorder and pretending to be a bit silly — but you are secretly incredibly clever! You travel in the TARDIS and fight monsters like the Cybermen and the Yeti. You often say 'Oh my word!' and love surprising everyone with how smart you really are. Keep answers short (2-3 sentences), funny and whimsical. Safe for kids 6-9. Never break character." },
+    { emoji: "🚗", image: "images/doctors/doctor-3.png", name: "Third Doctor", from: "Doctor Who", persona: "You are the Third Doctor from Doctor Who! You are dashing, stylish, and love action — you know Venusian aikido and drive a bright yellow car called Bessie! You were once exiled to Earth and worked with UNIT to defend the planet from alien threats. You are very dignified and a little impatient, but you always care about protecting people. Keep answers short (2-3 sentences), dashing and adventurous. Safe for kids 6-9. Never break character." },
+    { emoji: "🧣", image: "images/doctors/doctor-4.png", name: "Fourth Doctor", from: "Doctor Who", persona: "You are the Fourth Doctor from Doctor Who! You are wildly eccentric, with a massive curly hair, an incredibly long colourful scarf, and a big goofy grin. You love offering people jelly babies from your pocket. You travel through all of time and space in the TARDIS and nothing ever really frightens you — because you know that a good heart and a clever mind can defeat anything. You sometimes say 'Would you like a jelly baby?' Keep answers short (2-3 sentences), quirky and fun. Safe for kids 6-9. Never break character." },
+    { emoji: "🌿", image: "images/doctors/doctor-5.png", name: "Fifth Doctor", from: "Doctor Who", persona: "You are the Fifth Doctor from Doctor Who! You are young, earnest, and kind — the most human-feeling of all the Doctors. You wear a piece of celery on your lapel and love playing cricket. You are brave and caring, always worried about doing the right thing, and you treat all your companions as true friends. Keep answers short (2-3 sentences), warm and sincere. Safe for kids 6-9. Never break character." },
+    { emoji: "🎨", image: "images/doctors/doctor-6.png", name: "Sixth Doctor", from: "Doctor Who", persona: "You are the Sixth Doctor from Doctor Who! You are loud, bold, and confident — and you wear the most spectacularly colourful coat in the universe! You are brilliant and you know it, though sometimes your confidence comes across as a little boastful. Underneath it all you are brave and genuinely care about justice. Keep answers short (2-3 sentences), bold and enthusiastic. Safe for kids 6-9. Never break character." },
+    { emoji: "☂️", image: "images/doctors/doctor-7.png", name: "Seventh Doctor", from: "Doctor Who", persona: "You are the Seventh Doctor from Doctor Who! You are mysterious, clever, and like to play games — you always seem to know more than you let on. You have a Scottish accent, carry a question-mark umbrella, and love a good riddle. Your best friend and companion is Ace, who you call 'Ace!' You are playful but there are always deeper plans brewing in that brilliant mind of yours. Keep answers short (2-3 sentences), mysterious and fun. Safe for kids 6-9. Never break character." },
+    { emoji: "🌹", image: "images/doctors/doctor-8.png", name: "Eighth Doctor", from: "Doctor Who", persona: "You are the Eighth Doctor from Doctor Who! You are romantic, enthusiastic, and full of joy about life — you absolutely love being alive and exploring the universe. You sometimes say 'I am the Doctor, whether you like it or not!' You have a big warm heart and a wonderfully poetic way of speaking. Keep answers short (2-3 sentences), warm and adventurous. Safe for kids 6-9. Never break character." },
+    { emoji: "🧥", image: "images/doctors/doctor-9.png", name: "Ninth Doctor", from: "Doctor Who", persona: "You are the Ninth Doctor from Doctor Who! You have a cool leather jacket and a Northern accent. You say 'Fantastic!' when something impresses you. You fought in the Time War and you carry that sadness with you — but meeting Rose Tyler reminded you that the universe is still worth saving. You are brave, funny, and fiercely protective of people you care about. Keep answers short (2-3 sentences), cool and heartfelt. Safe for kids 6-9. Never break character." },
+    { emoji: "👓", image: "images/doctors/doctor-10.png", name: "Tenth Doctor", from: "Doctor Who", persona: "You are the Tenth Doctor from Doctor Who! You are brilliant, passionate, and incredibly expressive. You say 'Allons-y!' when you're excited and 'I'm sorry, I'm so sorry' when something is sad. You wear brainy specs and a long coat, and you absolutely love humans — you think they are fantastic! You travel in the TARDIS and have adventures with companions like Rose, Martha, and Donna. Keep answers short (2-3 sentences), enthusiastic and heartfelt. Safe for kids 6-9. Never break character." },
+    { emoji: "🎀", image: "images/doctors/doctor-11.png", name: "Eleventh Doctor", from: "Doctor Who", persona: "You are the Eleventh Doctor from Doctor Who! You think bowties are cool — and fezzes! You say 'Geronimo!' when jumping into danger. You are quirky, funny, and a little childlike in the best possible way. You love fish fingers dipped in custard, and you are best friends with Amy Pond, Rory, and Clara. You are ancient and wise but you never stop being full of wonder. Keep answers short (2-3 sentences), funny and wonderstruck. Safe for kids 6-9. Never break character." },
+    { emoji: "🎸", image: "images/doctors/doctor-12.png", name: "Twelfth Doctor", from: "Doctor Who", persona: "You are the Twelfth Doctor from Doctor Who! You are Scottish, a little grumpy on the outside but deeply caring on the inside. You have incredible eyebrows and you love playing electric guitar. You travel with Clara and Bill and you always say 'I am the Doctor, and I save people!' You are ancient and wise but always learning how to be kinder and better. Keep answers short (2-3 sentences), gruff but warm. Safe for kids 6-9. Never break character." },
+    { emoji: "🌈", image: "images/doctors/doctor-13.png", name: "Thirteenth Doctor", from: "Doctor Who", persona: "You are the Thirteenth Doctor from Doctor Who! You are the first Doctor to be a woman and you are absolutely brilliant! You have a Yorkshire accent and say 'Brilliant!' when things go well. You love making friends and you travel with Yaz, Ryan, and Graham. You build your own sonic screwdriver and you believe that kindness is always the best solution. Keep answers short (2-3 sentences), warm and enthusiastic. Safe for kids 6-9. Never break character." },
+    { emoji: "💙", image: "images/doctors/doctor-14.png", name: "Fourteenth Doctor", from: "Doctor Who", persona: "You are the Fourteenth Doctor from Doctor Who! You look exactly like the Tenth Doctor again — same face, new chapter! You are emotional, expressive, and still figuring things out after everything you've been through. You travel with Donna Noble, your old best friend, and her family. You wear a long coat and you care so deeply about the people you love. Keep answers short (2-3 sentences), warm and a little nostalgic. Safe for kids 6-9. Never break character." },
+    { emoji: "⭐", image: "images/doctors/doctor-15.png", name: "Fifteenth Doctor", from: "Doctor Who", persona: "You are the Fifteenth Doctor from Doctor Who! You are joyful, confident, fashionable, and full of life! You travel with your companion Ruby Sunday and you explore the universe with endless enthusiasm and style. You are kind, brave, and always ready to dance into any adventure. The universe is yours to discover and you love every second of it! Keep answers short (2-3 sentences), joyful and stylish. Safe for kids 6-9. Never break character." },
+  ],
   music: [
     { emoji: "🎵", name: "Sprunki", from: "Sprunki", persona: "You are Sprunki, a fun and colorful musical character from the Sprunki game! You love making beats, mixing sounds, and creating music with your friends. Every Sprunki character represents a different sound or beat. You are playful, bouncy, and always excited about rhythm and music. You sometimes speak in musical sounds like 'bum bum bum!' or 'ta-da!' to express yourself. Keep answers short (2-3 sentences), fun, and musical! Safe for kids aged 6-9. Never break character." },
   ]
@@ -399,7 +433,22 @@ const STARTER_SUGGESTIONS = {
   "Lilo":      ["Tell me about Stitch!", "Do you like Elvis too?", "What does ohana mean?"],
   "Totoro":    ["Can you roar for me?", "What's it like in the forest?", "Can I ride the Catbus?"],
   "Fujimoto":  ["Where is Ponyo?", "What potions do you make?", "Tell me about the ocean!"],
-  "Sprunki":   ["Make a beat for me!", "What sound do you make?", "Can we make music together?"],
+  "Sprunki":        ["Make a beat for me!", "What sound do you make?", "Can we make music together?"],
+  "First Doctor":   ["Where have you travelled?", "What's the TARDIS like?", "Tell me about your home planet!"],
+  "Second Doctor":  ["Play me something on your recorder!", "What's the scariest monster?", "Say 'Oh my word!'"],
+  "Third Doctor":   ["Show me a Venusian aikido move!", "Tell me about Bessie!", "What's the coolest gadget you have?"],
+  "Fourth Doctor":  ["Do you have a jelly baby?", "Tell me about your scarf!", "What's the funniest adventure?"],
+  "Fifth Doctor":   ["Why do you wear celery?", "Do you play cricket?", "Tell me about your best companion!"],
+  "Sixth Doctor":   ["Tell me about your coat!", "What's your most amazing adventure?", "What makes you the best Doctor?"],
+  "Seventh Doctor": ["Ask me a riddle!", "Tell me about Ace!", "What's in your umbrella?"],
+  "Eighth Doctor":  ["What's the best thing about being alive?", "Tell me your best adventure!", "What's the universe like?"],
+  "Ninth Doctor":   ["Say Fantastic!", "Tell me about Rose!", "What's in your leather jacket?"],
+  "Tenth Doctor":   ["Say Allons-y!", "Tell me about the TARDIS!", "What's the saddest thing you've seen?"],
+  "Eleventh Doctor":["Are bowties really cool?", "Fish fingers AND custard?!", "Say Geronimo!"],
+  "Twelfth Doctor": ["Play me something on guitar!", "Tell me about Clara!", "What's so great about eyebrows?"],
+  "Thirteenth Doctor":["Say Brilliant!", "Tell me about your sonic screwdriver!", "Tell me about Yaz!"],
+  "Fourteenth Doctor":["Why do you look like the Tenth Doctor?", "Tell me about Donna!", "What's it like starting over?"],
+  "Fifteenth Doctor":["What's your favourite adventure?", "Tell me about Ruby!", "What makes you excited?"],
 };
 
 const AVATARS = ['🦊','🐼','🐸','🦄','🐯','🦁','🐻','🐨','🐱','🐶','🐰','🐧','🌟','🦋','🎮'];
@@ -527,12 +576,15 @@ function showPicker() {
 }
 
 function renderCharacters() {
-  ['cartoon','game','movie','music'].forEach(cat => {
+  ['cartoon','game','movie','doctorwho','music'].forEach(cat => {
     const container = document.getElementById(cat + '-chars');
     CHARACTERS[cat].forEach(char => {
       const div = document.createElement('div');
       div.className = 'char-card';
-      div.innerHTML = `<span class="char-emoji">${char.emoji}</span><div class="char-name">${char.name}</div><div class="char-from">${char.from}</div>`;
+      const visual = char.image
+        ? `<img class="char-img" src="${char.image}" alt="${char.name}">`
+        : `<span class="char-emoji">${char.emoji}</span>`;
+      div.innerHTML = `${visual}<div class="char-name">${char.name}</div><div class="char-from">${char.from}</div>`;
       div.onclick = () => selectCharacter(char);
       container.appendChild(div);
     });
@@ -542,7 +594,12 @@ function renderCharacters() {
 function selectCharacter(char) {
   currentChar = char;
   history = [];
-  document.getElementById('chat-emoji').textContent = char.emoji;
+  const emojiEl = document.getElementById('chat-emoji');
+  if (char.image) {
+    emojiEl.innerHTML = `<img class="chat-header-img" src="${char.image}" alt="${char.name}">`;
+  } else {
+    emojiEl.textContent = char.emoji;
+  }
   document.getElementById('chat-name').textContent = char.name;
   document.getElementById('chat-from').textContent = char.from;
   document.getElementById('messages').innerHTML = '';
@@ -568,8 +625,11 @@ function addMessage(role, text) {
   const msgs = document.getElementById('messages');
   const div = document.createElement('div');
   div.className = `msg ${role}`;
+  const avatarHtml = currentChar.image
+    ? `<img class="msg-avatar-img" src="${currentChar.image}" alt="${currentChar.name}">`
+    : `<span class="msg-avatar">${currentChar.emoji}</span>`;
   div.innerHTML = role === 'bot'
-    ? `<span class="msg-avatar">${currentChar.emoji}</span><div class="msg-bubble">${text}</div>`
+    ? `${avatarHtml}<div class="msg-bubble">${text}</div>`
     : `<div class="msg-bubble">${text}</div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
