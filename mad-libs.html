@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mad Libs">
+<title>Mad Libs 🎭</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f5f0ff;
+  min-height: 100vh;
+  color: #1a1a2e;
+}
+.app { max-width: 600px; margin: 0 auto; padding: 0 16px 48px; min-height: 100vh; }
+
+/* THEME PICKER */
+.hero { text-align: center; padding: 36px 0 24px; }
+.hero h1 { font-size: 28px; font-weight: 800; line-height: 1.2; }
+.hero h1 span { color: #8b5cf6; }
+.hero p { font-size: 15px; color: #999; margin-top: 6px; }
+
+.section-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #bbb; margin: 20px 0 10px 2px;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+.theme-card {
+  background: white; border-radius: 18px;
+  padding: 18px 10px; text-align: center; cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07); border: 2.5px solid transparent;
+  transition: transform 0.1s; -webkit-user-select: none; user-select: none;
+}
+.theme-card:active { transform: scale(0.93); }
+.theme-card:hover { border-color: #8b5cf6; }
+.theme-emoji { font-size: 34px; display: block; margin-bottom: 8px; }
+.theme-label { font-size: 13px; font-weight: 700; color: #444; }
+
+.no-key-msg {
+  text-align: center; padding: 60px 20px;
+  font-size: 15px; color: #777; line-height: 1.7;
+}
+.no-key-msg a { color: #8b5cf6; text-decoration: none; font-weight: 600; }
+
+/* WORD ENTRY */
+.entry-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0 14px;
+}
+.top-btn {
+  background: #ede9ff; border: none; border-radius: 10px;
+  padding: 8px 12px; font-size: 13px; color: #8b5cf6;
+  font-weight: 600; cursor: pointer;
+}
+.top-btn:active { background: #ddd6fe; }
+.theme-pill {
+  background: #ede9ff; color: #8b5cf6; font-size: 13px; font-weight: 700;
+  border-radius: 20px; padding: 6px 12px;
+}
+
+.entry-hint {
+  background: #ede9ff; border-radius: 14px; padding: 12px 16px;
+  font-size: 14px; color: #7c3aed; text-align: center; margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.word-field { margin-bottom: 14px; }
+.word-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: #8b5cf6; margin-bottom: 5px; display: block;
+}
+.word-input {
+  width: 100%; border: 2px solid #e8e0ff; border-radius: 12px;
+  padding: 12px 14px; font-size: 16px; font-family: inherit; color: #1a1a2e;
+  background: white; outline: none; transition: border-color 0.15s;
+}
+.word-input:focus { border-color: #8b5cf6; }
+.word-input.filled { border-color: #c4b5fd; background: #faf8ff; }
+
+.make-btn {
+  display: block; width: 100%; background: #8b5cf6; border: none;
+  border-radius: 16px; padding: 16px; font-size: 17px; font-weight: 700;
+  color: white; cursor: pointer; margin-top: 24px;
+}
+.make-btn:disabled { background: #d8d0f8; cursor: default; }
+.make-btn:active:not(:disabled) { background: #7c3aed; }
+
+/* LOADING */
+.loading-wrap {
+  text-align: center; padding: 60px 20px;
+}
+.loading-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 14px; }
+.ldot {
+  width: 12px; height: 12px; border-radius: 50%; background: #8b5cf6;
+  animation: ldot 1.2s infinite;
+}
+.ldot:nth-child(2) { animation-delay: 0.2s; }
+.ldot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes ldot { 0%,60%,100%{transform:translateY(0);opacity:0.35} 30%{transform:translateY(-8px);opacity:1} }
+.loading-text { font-size: 15px; color: #999; font-style: italic; }
+
+/* STORY SCREEN */
+.story-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0 14px;
+}
+
+.story-card {
+  background: white; border-radius: 20px; padding: 24px 22px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  font-size: 18px; line-height: 2; color: #2a2a3e;
+  margin-bottom: 20px;
+}
+.story-card .filled-word {
+  color: #8b5cf6; font-weight: 800;
+  background: #f0ebff; border-radius: 6px; padding: 1px 5px;
+  display: inline-block;
+}
+
+.word-recap {
+  background: white; border-radius: 16px; padding: 18px 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 20px;
+}
+.recap-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #bbb; margin-bottom: 12px;
+}
+.recap-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.recap-item { font-size: 13px; color: #555; }
+.recap-item span { color: #8b5cf6; font-weight: 700; }
+
+.end-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-purple {
+  flex: 1; background: #8b5cf6; border: none; border-radius: 14px;
+  padding: 14px 20px; font-size: 15px; font-weight: 700; color: white; cursor: pointer;
+}
+.btn-purple:active { background: #7c3aed; }
+.btn-ghost {
+  flex: 1; background: #ede9ff; border: none; border-radius: 14px;
+  padding: 14px 20px; font-size: 15px; font-weight: 600; color: #8b5cf6;
+  cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+}
+.btn-ghost:active { background: #ddd6fe; }
+
+@media (max-height: 520px) {
+  .hero { padding: 8px 0 12px; }
+  .hero h1 { font-size: 22px; }
+  .hero p { display: none; }
+  .theme-card { padding: 10px 8px; }
+  .theme-emoji { font-size: 26px; margin-bottom: 5px; }
+  .make-btn { margin-top: 14px; padding: 12px; font-size: 15px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- THEME PICKER -->
+  <div id="theme-screen">
+    <div class="hero">
+      <h1>Mad <span>Libs</span> 🎭</h1>
+      <p>Fill in silly words — then watch the magic!</p>
+    </div>
+
+    <div id="no-key-msg" class="no-key-msg" style="display:none">
+      Open <a href="kids-chatbot.html">Character Chat</a> first and enter your API key, then come back!
+    </div>
+
+    <div id="theme-form">
+      <div class="section-label">Pick a theme</div>
+      <div class="theme-grid" id="theme-grid"></div>
+    </div>
+  </div>
+
+  <!-- WORD ENTRY -->
+  <div id="entry-screen" style="display:none">
+    <div class="entry-top">
+      <button class="top-btn" onclick="goThemes()">← Themes</button>
+      <div class="theme-pill" id="entry-theme-pill"></div>
+    </div>
+    <div class="entry-hint">Fill in the words below — <strong>don't peek at the story!</strong> 🙈</div>
+    <div id="word-fields"></div>
+    <button class="make-btn" id="make-btn" onclick="makeStory()" disabled>Make the story! 🎭</button>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading-screen" style="display:none">
+    <div class="loading-wrap">
+      <div class="loading-dots"><div class="ldot"></div><div class="ldot"></div><div class="ldot"></div></div>
+      <div class="loading-text">Writing your silly story…</div>
+    </div>
+  </div>
+
+  <!-- STORY -->
+  <div id="story-screen" style="display:none">
+    <div class="story-top">
+      <button class="top-btn" onclick="goThemes()">← New Story</button>
+      <div class="theme-pill" id="story-theme-pill"></div>
+    </div>
+    <div class="story-card" id="story-text"></div>
+    <div class="word-recap" id="word-recap"></div>
+    <div class="end-actions">
+      <button class="btn-purple" onclick="goEntry()">Same theme again</button>
+      <button class="btn-ghost" onclick="goThemes()">New theme</button>
+    </div>
+  </div>
+
+</div>
+<script src="config.js" onerror="void 0"></script>
+<script src="header.js"></script>
+<script>
+const THEMES = [
+  { emoji: '🚀', label: 'Space Adventure' },
+  { emoji: '🏫', label: 'School Day' },
+  { emoji: '🌲', label: 'Magic Forest' },
+  { emoji: '🦸', label: 'Superhero' },
+  { emoji: '🏴‍☠️', label: 'Pirate Ship' },
+  { emoji: '🦕', label: 'Dinosaur Land' },
+  { emoji: '🏰', label: 'Fairy Tale' },
+  { emoji: '🍕', label: 'Pizza Party' },
+];
+
+const WORD_SLOTS = [
+  { key: 'noun',      label: 'A noun (person, place, or thing)',  placeholder: 'e.g. banana, robot, shoe' },
+  { key: 'adjective', label: 'An adjective (describing word)',     placeholder: 'e.g. wiggly, purple, stinky' },
+  { key: 'verb_ing',  label: 'A verb ending in -ing',             placeholder: 'e.g. jumping, sneezing, dancing' },
+  { key: 'animal',    label: 'An animal',                          placeholder: 'e.g. penguin, hamster, platypus' },
+  { key: 'food',      label: 'A food',                             placeholder: 'e.g. spaghetti, pickles, cupcake' },
+  { key: 'silly',     label: 'A silly made-up word',              placeholder: 'e.g. blorbfizzle, snurp, gloopie' },
+  { key: 'number',    label: 'A number',                           placeholder: 'e.g. 47, 1000, 3' },
+  { key: 'body_part', label: 'A body part',                        placeholder: 'e.g. elbow, nostril, kneecap' },
+];
+
+function getProvider()   { return localStorage.getItem('cc_provider') || window.CC_PROVIDER || 'anthropic'; }
+function getKey()        { return window.CC_API_KEY || localStorage.getItem('cc_api_key') || ''; }
+function getLocalUrl()   { return localStorage.getItem('cc_local_url') || window.CC_LOCAL_URL || ''; }
+function getLocalModel() { return localStorage.getItem('cc_local_model') || window.CC_LOCAL_MODEL || ''; }
+function getProfileName(){ return localStorage.getItem('cc_profile_name') || ''; }
+
+let activeTheme = null;
+let wordValues = {};
+
+async function callLLM(system, userMsg) {
+  const messages = [{ role: 'user', content: userMsg }];
+  if (getProvider() === 'anthropic') {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': getKey(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 500, system, messages })
+    });
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'API error'); }
+    return (await res.json()).content?.[0]?.text || '';
+  } else {
+    const res = await fetch(getLocalUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: getLocalModel(), messages: [{ role: 'system', content: system }, ...messages] })
+    });
+    if (!res.ok) throw new Error('Local LLM error');
+    return (await res.json()).choices?.[0]?.message?.content || '';
+  }
+}
+
+function buildThemeGrid() {
+  const grid = document.getElementById('theme-grid');
+  THEMES.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'theme-card';
+    card.innerHTML = `<span class="theme-emoji">${t.emoji}</span><div class="theme-label">${t.label}</div>`;
+    card.onclick = () => pickTheme(t);
+    grid.appendChild(card);
+  });
+}
+
+function pickTheme(theme) {
+  activeTheme = theme;
+  buildWordFields();
+  document.getElementById('theme-screen').style.display = 'none';
+  document.getElementById('entry-screen').style.display = 'block';
+  document.getElementById('entry-theme-pill').textContent = `${theme.emoji} ${theme.label}`;
+  window.scrollTo(0, 0);
+}
+
+function buildWordFields() {
+  wordValues = {};
+  const container = document.getElementById('word-fields');
+  container.innerHTML = '';
+  WORD_SLOTS.forEach(slot => {
+    const wrap = document.createElement('div');
+    wrap.className = 'word-field';
+    const label = document.createElement('label');
+    label.className = 'word-label';
+    label.textContent = slot.label;
+    const input = document.createElement('input');
+    input.className = 'word-input';
+    input.type = 'text';
+    input.placeholder = slot.placeholder;
+    input.autocomplete = 'off';
+    input.autocorrect = 'off';
+    input.maxLength = 40;
+    input.addEventListener('input', () => {
+      const v = input.value.trim();
+      input.classList.toggle('filled', !!v);
+      wordValues[slot.key] = v;
+      checkReady();
+    });
+    wrap.appendChild(label);
+    wrap.appendChild(input);
+    container.appendChild(wrap);
+  });
+  document.getElementById('make-btn').disabled = true;
+}
+
+function checkReady() {
+  const allFilled = WORD_SLOTS.every(s => wordValues[s.key]);
+  document.getElementById('make-btn').disabled = !allFilled;
+}
+
+async function makeStory() {
+  document.getElementById('entry-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'block';
+  window.scrollTo(0, 0);
+
+  const name = getProfileName();
+  const wv = wordValues;
+
+  const system = `You write short, funny Mad Libs stories for children aged 5-10. Stories are 4-6 sentences. Write warmly and with silliness. Use EXACTLY the words provided — do not change them, pluralize them, or add to them. Each provided word must appear in the story at least once. The story should flow naturally and be hilarious because the random words don't fit. Keep it age-appropriate.
+
+Respond with ONLY valid JSON — no markdown, no code fences:
+{"story": "The full story as a single string. Wrap each of the 8 provided words in <w> tags, like <w>banana</w>."}`;
+
+  const prompt = `Write a funny "${activeTheme.label}" story${name ? ` for a kid named ${name}` : ''} using ALL of these exact words:
+- Noun: "${wv.noun}"
+- Adjective: "${wv.adjective}"
+- Verb (-ing): "${wv.verb_ing}"
+- Animal: "${wv.animal}"
+- Food: "${wv.food}"
+- Silly word: "${wv.silly}"
+- Number: "${wv.number}"
+- Body part: "${wv.body_part}"
+
+Remember: use each word exactly as written, wrapped in <w> tags.`;
+
+  try {
+    const raw = await callLLM(system, prompt);
+    const match = raw.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : raw);
+
+    let storyHtml = parsed.story
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/&lt;w&gt;(.*?)&lt;\/w&gt;/g, '<span class="filled-word">$1</span>');
+
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('story-screen').style.display = 'block';
+    document.getElementById('story-theme-pill').textContent = `${activeTheme.emoji} ${activeTheme.label}`;
+    document.getElementById('story-text').innerHTML = storyHtml;
+
+    const recap = document.getElementById('word-recap');
+    recap.innerHTML = `<div class="recap-title">Your words</div><div class="recap-grid">${
+      WORD_SLOTS.map(s => `<div class="recap-item">${s.label.split('(')[0].trim()}: <span>${wordValues[s.key]}</span></div>`).join('')
+    }</div>`;
+
+    window.scrollTo(0, 0);
+  } catch(e) {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('entry-screen').style.display = 'block';
+    const err = document.createElement('div');
+    err.style.cssText = 'text-align:center;padding:16px;color:#ff4757;font-size:14px;';
+    err.textContent = 'Oops! Something went wrong. Try again.';
+    document.getElementById('word-fields').prepend(err);
+    setTimeout(() => err.remove(), 3000);
+  }
+}
+
+function goThemes() {
+  document.getElementById('entry-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('story-screen').style.display = 'none';
+  document.getElementById('theme-screen').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function goEntry() {
+  document.getElementById('story-screen').style.display = 'none';
+  buildWordFields();
+  document.getElementById('entry-screen').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+// Boot
+const _hasConfig = getProvider() === 'local' ? (getLocalUrl() && getLocalModel()) : getKey();
+if (_hasConfig) {
+  buildThemeGrid();
+} else {
+  document.getElementById('theme-form').style.display = 'none';
+  document.getElementById('no-key-msg').style.display = 'block';
+}
+</script>
+</body>
+</html>
