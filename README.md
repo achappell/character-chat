@@ -1,22 +1,31 @@
-# Character Chat ✨
+# Kids Apps ✨
 
-A kids' chatbot web app where children can have conversations with their favorite cartoon, video game, and movie characters — powered by the Claude API.
+A collection of AI-powered mini-apps for kids, built as a static GitHub Pages site. No server, no accounts — API key stored locally on the device, responses go directly to Anthropic.
 
-Built as a static GitHub Pages site. No server, no accounts, no data stored anywhere except the user's own device.
+## Apps
+
+### 💬 Character Chat
+Chat with favorite cartoon, video game, and movie characters. SpongeBob, Bluey, Mario, Sonic, Stitch, Totoro, and many more. AI-generated follow-up suggestions so kids always know what to say next.
+
+### 📖 Story Builder
+Build your own choose-your-own-adventure story. Pick a hero, a world, and a quest — then make choices (or type your own) to steer the plot. Tap "End my story" whenever you're ready for the finale.
+
+### 😂 Joke Lab
+Pick a topic (or type your own) and get a batch of kid-friendly jokes with blurred punchlines to tap and reveal. Rate each joke 😂 or 🙄 and load more infinitely.
 
 ## Features
 
-- Chat with characters from SpongeBob, Bluey, Mario, Sonic, Frozen, Toy Story, and more
-- AI-generated follow-up suggestions after each reply so kids always know what to say next
-- Safe, age-appropriate responses (tuned for ages 6–9)
-- Works on mobile and desktop
-- API key stored locally in `localStorage` — never leaves the device except to call Anthropic directly
+- Shared header across all pages — profile name + emoji avatar, active model indicator, quick settings access
+- Safe, age-appropriate responses tuned for ages 6–9
+- Works on iPhone, iPad, and desktop
+- API key stored in `localStorage` — never leaves the device except to call Anthropic directly
+- Supports local LLMs via any OpenAI-compatible endpoint (e.g. Ollama)
 
 ## Setup
 
 1. Get an Anthropic API key at [console.anthropic.com](https://console.anthropic.com)
 2. Open the app and paste your key in the one-time setup screen
-3. Pick a character and start chatting
+3. Pick an app and go
 
 ## Running locally
 
@@ -28,15 +37,24 @@ npx serve .
 
 Then open `http://localhost:3000`.
 
+Optionally copy `config.example.js` to `config.js` and fill in your key so you don't have to paste it on every reload (already gitignored).
+
 ## Project structure
 
 ```
-index.html          # Landing page with app cards
-kids-chatbot.html   # Character chat app
+index.html          # Landing page
+kids-chatbot.html   # Character Chat
+story-builder.html  # Story Builder
+joke-lab.html       # Joke Lab
+header.js           # Shared header component (injected on all pages)
+config.js           # Dev-only key injection (gitignored)
 ```
 
 ## Tech
 
 - Vanilla HTML/CSS/JS — no build step, no dependencies
-- [Claude API](https://docs.anthropic.com) (`claude-sonnet-4-6`) for character responses and suggestion generation
+- [Claude API](https://docs.anthropic.com) for all AI responses
+  - Character Chat: `claude-sonnet-4-6`
+  - Story Builder: `claude-sonnet-4-6`
+  - Joke Lab: `claude-haiku-4-5` (faster for short content)
 - Hosted on GitHub Pages
