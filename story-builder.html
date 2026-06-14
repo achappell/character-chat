@@ -124,6 +124,20 @@ body {
   width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
   background: #f0f4ff; color: #5b6ef5; font-size: 12px; font-weight: 700;
 }
+.choice-free-row {
+  display: flex; gap: 8px; margin-top: 4px;
+}
+.choice-free-input {
+  flex: 1; border: 2px solid #e0e4ff; border-radius: 14px;
+  padding: 13px 16px; font-size: 15px; font-family: inherit; color: #1a1a2e;
+  background: white; outline: none;
+}
+.choice-free-input:focus { border-color: #5b6ef5; }
+.choice-free-btn {
+  background: #5b6ef5; border: none; border-radius: 14px;
+  padding: 13px 18px; font-size: 15px; font-weight: 700; color: white; cursor: pointer; flex-shrink: 0;
+}
+.choice-free-btn:active { background: #4454d4; }
 
 .loading-card {
   background: white; border-radius: 16px; padding: 32px;
@@ -344,13 +358,34 @@ function showChoices(choices) {
   const wrap = document.createElement('div');
   wrap.id = 'choices-wrap';
   wrap.innerHTML = `<div class="choice-label">What happens next?</div>`;
+  const letters = ['A','B','C','D','E'];
   choices.forEach((choice, i) => {
     const btn = document.createElement('button');
     btn.className = 'choice-btn';
-    btn.innerHTML = `<span class="choice-letter">${['A','B'][i]}</span>${choice}`;
+    btn.innerHTML = `<span class="choice-letter">${letters[i]}</span>${choice}`;
     btn.onclick = () => pickChoice(choice, wrap);
     wrap.appendChild(btn);
   });
+
+  const freeRow = document.createElement('div');
+  freeRow.className = 'choice-free-row';
+  const input = document.createElement('input');
+  input.className = 'choice-free-input';
+  input.type = 'text';
+  input.placeholder = 'Or type your own idea…';
+  input.maxLength = 120;
+  const goBtn = document.createElement('button');
+  goBtn.className = 'choice-free-btn';
+  goBtn.textContent = '→';
+  goBtn.onclick = () => {
+    const val = input.value.trim();
+    if (val) pickChoice(val, wrap);
+  };
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') goBtn.click(); });
+  freeRow.appendChild(input);
+  freeRow.appendChild(goBtn);
+  wrap.appendChild(freeRow);
+
   content.appendChild(wrap);
   setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
 }
@@ -397,20 +432,20 @@ Respond ONLY with valid JSON — no markdown, no code fences, no extra text.`;
 
   let prompt;
   if (chapters.length === 0) {
-    prompt = `Begin the adventure! Write an exciting opening (3-4 sentences) that sets the scene and introduces the hero. Give exactly 2 short choices (under 8 words each).
+    prompt = `Begin the adventure! Write an exciting opening (3-4 sentences) that sets the scene and introduces the hero. Give exactly 5 different short choices (under 10 words each) — make them varied and fun!
 
 Reply with ONLY this JSON:
-{"story": "...", "choices": ["choice A", "choice B"]}`;
+{"story": "...", "choices": ["choice A", "choice B", "choice C", "choice D", "choice E"]}`;
   } else if (isFinal) {
     prompt = `Story so far:\n${history}\n\nWrite the final chapter (4-5 sentences) with a satisfying, happy ending.
 
 Reply with ONLY this JSON:
 {"story": "...", "choices": []}`;
   } else {
-    prompt = `Story so far:\n${history}\n\nContinue the adventure (3-4 exciting sentences), then give exactly 2 short choices (under 8 words each).
+    prompt = `Story so far:\n${history}\n\nContinue the adventure (3-4 exciting sentences), then give exactly 5 different short choices (under 10 words each) — make them varied and fun!
 
 Reply with ONLY this JSON:
-{"story": "...", "choices": ["choice A", "choice B"]}`;
+{"story": "...", "choices": ["choice A", "choice B", "choice C", "choice D", "choice E"]}`;
   }
 
   try {
