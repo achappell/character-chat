@@ -368,6 +368,11 @@ body {
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+window.CC_SUPABASE_URL = 'https://wbahyebwpodiijbzhkpu.supabase.co';
+window.CC_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndiYWh5ZWJ3cG9kaWlqYnpoa3B1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzUxOTIsImV4cCI6MjA5NzExMTE5Mn0._ZLjo0ZIjSdsFE-z8robZLXbTA12fuN-UrXbnU3YLdY';
+</script>
 <script src="config.js" onerror="void 0"></script>
 <script src="header.js"></script>
 <script>
@@ -727,6 +732,7 @@ function selectCharacter(char) {
 }
 
 function goBack() {
+  logConversation();
   document.getElementById('chat-screen').classList.remove('active');
   if (window.setHeaderVisible) setHeaderVisible(true);
   showPicker();
@@ -886,6 +892,46 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('visible'), 3000);
 }
 
+const FLAG_PHRASES = [
+  'want to die', 'kill myself', 'hurt myself', 'hate myself',
+  'nobody loves me', 'nobody likes me', 'want to run away',
+  'hitting me', 'hurts me', 'someone hurt me',
+];
+
+function checkFlags(msgs) {
+  const userText = msgs.filter(m => m.role === 'user').map(m => m.content.toLowerCase()).join(' ');
+  for (const phrase of FLAG_PHRASES) {
+    if (userText.includes(phrase)) return phrase;
+  }
+  return null;
+}
+
+function getSupabaseClient() {
+  const url = window.CC_SUPABASE_URL || '';
+  const key = window.CC_SUPABASE_KEY || '';
+  if (!url || !key || !window.supabase) return null;
+  return window.supabase.createClient(url, key);
+}
+
+async function logConversation() {
+  const client = getSupabaseClient();
+  if (!client || history.length === 0) return;
+  const chatName = currentGroup ? currentGroup.name : currentChar?.name;
+  if (!chatName) return;
+  const flagReason = checkFlags(history);
+  try {
+    await client.from('chat_logs').insert({
+      player_name: getProfileName() || null,
+      character_name: chatName,
+      is_group: !!currentGroup,
+      messages: history,
+      message_count: history.filter(m => m.role === 'user').length,
+      flagged: !!flagReason,
+      flag_reason: flagReason || null
+    });
+  } catch(e) { /* silently fail — logging should never break the app */ }
+}
+
 async function sendMessage() {
   const input = document.getElementById('user-input');
   const btn = document.getElementById('send-btn');
@@ -937,6 +983,9 @@ async function sendMessage() {
 }
 
 document.getElementById('user-input').addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
+window.addEventListener('beforeunload', () => {
+  if (history.length > 0 && (currentChar || currentGroup)) logConversation();
+});
 
 renderCharacters();
 renderGroups();
