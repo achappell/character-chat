@@ -711,7 +711,7 @@ async function callLLM({ system, messages, maxTokens = 1000 }) {
     const systemContent = 'CRITICAL RULE: You must ONLY respond in English. Never write Chinese, Japanese, or any other language. English only, no exceptions.\n\n' + (system || '');
     const openaiMessages = [{ role: 'system', content: systemContent }, ...messages];
     const isOpenCode = getProvider() === 'opencode-go';
-    const url = isOpenCode ? 'https://opencode.ai/zen/go/v1/chat/completions' : getLocalUrl();
+    const url = isOpenCode ? 'https://opencode-go-proxy.achappell.workers.dev/v1/chat/completions' : getLocalUrl();
     const headers = { 'Content-Type': 'application/json' };
     if (isOpenCode) headers['Authorization'] = `Bearer ${getOpenCodeKey()}`;
     const res = await fetch(url, {
