@@ -5,7 +5,10 @@
 
   const ls   = k => localStorage.getItem(k) || '';
   const prov = () => ls('cc_provider') || window.CC_PROVIDER || 'anthropic';
-  const model= () => ls('cc_local_model') || window.CC_LOCAL_MODEL || 'Local';
+  const model= () => {
+    if (prov() === 'opencode-go') return ls('cc_opencode_model') || window.CC_OPENCODE_MODEL || 'OpenCode Go';
+    return ls('cc_local_model') || window.CC_LOCAL_MODEL || 'Local';
+  };
   const name = () => ls('cc_profile_name');
   const emo  = () => ls('cc_profile_emoji');
 
@@ -104,7 +107,7 @@
     const n = name(), e = emo(), p = prov();
     const profileLabel = n ? `${e || '👤'} ${n} ✏️` : '+ Your name';
     const provClass  = p === 'anthropic' ? 'cloud' : 'local';
-    const provLabel  = p === 'anthropic' ? '☁️ Claude' : `🖥️ ${model()}`;
+    const provLabel  = p === 'anthropic' ? '☁️ Claude' : p === 'opencode-go' ? `⚡ ${model()}` : `🖥️ ${model()}`;
     const settingsUrl = 'kids-chatbot.html?settings=1';
 
     header.innerHTML = `

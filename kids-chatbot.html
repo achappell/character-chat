@@ -278,6 +278,9 @@ body {
           <button class="provider-btn" id="btn-local" onclick="selectProvider('local')">
             <span class="pb-icon">🖥️</span>Local LLM
           </button>
+          <button class="provider-btn" id="btn-opencode-go" onclick="selectProvider('opencode-go')">
+            <span class="pb-icon">⚡</span>OpenCode Go
+          </button>
         </div>
         <!-- Anthropic section -->
         <div class="setup-section visible" id="section-anthropic">
@@ -293,6 +296,15 @@ body {
           <div class="setup-label">Model</div>
           <div class="setup-hint">Must be pulled and available on your server</div>
           <input class="key-input" type="text" id="local-model-input" placeholder="qwen2.5:14b" />
+        </div>
+        <!-- OpenCode Go section -->
+        <div class="setup-section" id="section-opencode-go">
+          <div class="setup-label">API Key</div>
+          <div class="setup-hint">Get yours at <a href="https://opencode.ai/zen" target="_blank">opencode.ai/zen</a> (Go plan)</div>
+          <input class="key-input" type="password" id="opencode-key-input" placeholder="opencode API key" />
+          <div class="setup-label">Model</div>
+          <div class="setup-hint">⭐ = recommended for character chat &middot; full list at <a href="https://opencode.ai/docs/go/" target="_blank">opencode.ai/docs/go</a></div>
+          <select class="key-input" id="opencode-model-input"></select>
         </div>
         <button class="setup-btn" onclick="saveSettings()">Save & Start Chatting ✨</button>
         <div class="setup-error" id="setup-error"></div>
@@ -433,6 +445,34 @@ function getProvider() { return localStorage.getItem('cc_provider') || window.CC
 function getKey()      { return window.CC_API_KEY || localStorage.getItem('cc_api_key') || ''; }
 function getLocalUrl() { return localStorage.getItem('cc_local_url') || window.CC_LOCAL_URL || ''; }
 function getLocalModel(){ return localStorage.getItem('cc_local_model') || window.CC_LOCAL_MODEL || ''; }
+function getOpenCodeKey()  { return window.CC_OPENCODE_KEY || localStorage.getItem('cc_opencode_key') || ''; }
+function getOpenCodeModel(){ return localStorage.getItem('cc_opencode_model') || window.CC_OPENCODE_MODEL || ''; }
+
+const OPENCODE_GO_MODELS = [
+  { id: 'glm-5.2',           label: 'GLM 5.2',            recommended: true },
+  { id: 'kimi-k2.6',         label: 'Kimi K2.6',          recommended: true },
+  { id: 'glm-5.1',           label: 'GLM 5.1' },
+  { id: 'kimi-k3',           label: 'Kimi K3' },
+  { id: 'kimi-k2.7-code',    label: 'Kimi K2.7 Code' },
+  { id: 'deepseek-v4-pro',   label: 'DeepSeek V4 Pro' },
+  { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
+  { id: 'mimo-v2.5-pro',     label: 'MiMo V2.5 Pro' },
+  { id: 'mimo-v2.5',         label: 'MiMo V2.5' },
+  { id: 'grok-4.5',          label: 'Grok 4.5' },
+];
+
+function populateOpenCodeModelSelect() {
+  const select = document.getElementById('opencode-model-input');
+  if (!select || select.options.length) return;
+  const current = getOpenCodeModel();
+  OPENCODE_GO_MODELS.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = (m.recommended ? '⭐ ' : '') + m.label;
+    select.appendChild(opt);
+  });
+  select.value = current && OPENCODE_GO_MODELS.some(m => m.id === current) ? current : 'glm-5.2';
+}
 
 let _selectedProvider = 'anthropic';
 
@@ -440,8 +480,10 @@ function selectProvider(p) {
   _selectedProvider = p;
   document.getElementById('btn-anthropic').classList.toggle('active', p === 'anthropic');
   document.getElementById('btn-local').classList.toggle('active', p === 'local');
+  document.getElementById('btn-opencode-go').classList.toggle('active', p === 'opencode-go');
   document.getElementById('section-anthropic').classList.toggle('visible', p === 'anthropic');
   document.getElementById('section-local').classList.toggle('visible', p === 'local');
+  document.getElementById('section-opencode-go').classList.toggle('visible', p === 'opencode-go');
 }
 
 function saveSettings() {
@@ -461,6 +503,13 @@ function saveSettings() {
       err.style.display = 'block'; return;
     }
     localStorage.setItem('cc_api_key', key);
+  } else if (_selectedProvider === 'opencode-go') {
+    const key = document.getElementById('opencode-key-input').value.trim();
+    const model = document.getElementById('opencode-model-input').value.trim();
+    if (!key) { err.textContent = 'Please paste your OpenCode Go API key'; err.style.display = 'block'; return; }
+    if (!model) { err.textContent = 'Please enter a model name'; err.style.display = 'block'; return; }
+    localStorage.setItem('cc_opencode_key', key);
+    localStorage.setItem('cc_opencode_model', model);
   } else {
     const url = document.getElementById('local-url-input').value.trim();
     const model = document.getElementById('local-model-input').value.trim();
@@ -485,6 +534,8 @@ function showSetup() {
   document.getElementById('api-key-input').value = getKey();
   document.getElementById('local-url-input').value = getLocalUrl();
   document.getElementById('local-model-input').value = getLocalModel();
+  document.getElementById('opencode-key-input').value = getOpenCodeKey();
+  populateOpenCodeModelSelect();
   document.getElementById('setup-screen').classList.add('active');
   document.getElementById('picker-screen').classList.remove('active');
   document.getElementById('chat-screen').classList.remove('active');
@@ -659,12 +710,16 @@ async function callLLM({ system, messages, maxTokens = 1000 }) {
   } else {
     const systemContent = 'CRITICAL RULE: You must ONLY respond in English. Never write Chinese, Japanese, or any other language. English only, no exceptions.\n\n' + (system || '');
     const openaiMessages = [{ role: 'system', content: systemContent }, ...messages];
-    const res = await fetch(getLocalUrl(), {
+    const isOpenCode = getProvider() === 'opencode-go';
+    const url = isOpenCode ? 'https://opencode.ai/zen/go/v1/chat/completions' : getLocalUrl();
+    const headers = { 'Content-Type': 'application/json' };
+    if (isOpenCode) headers['Authorization'] = `Bearer ${getOpenCodeKey()}`;
+    const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: getLocalModel(), messages: openaiMessages })
+      headers,
+      body: JSON.stringify({ model: isOpenCode ? getOpenCodeModel() : getLocalModel(), messages: openaiMessages })
     });
-    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'Local LLM error'); }
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || (isOpenCode ? 'OpenCode Go error' : 'Local LLM error')); }
     const data = await res.json();
     return data.choices?.[0]?.message?.content || '';
   }

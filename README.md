@@ -27,6 +27,7 @@ Pick a theme (Space Adventure, Pirate Ship, Fairy Tale, and more), fill in 8 wor
 - Works on iPhone, iPad, and desktop
 - API key stored in `localStorage` — never leaves the device except to call Anthropic directly
 - Supports local LLMs via any OpenAI-compatible endpoint (e.g. Ollama)
+- Supports [OpenCode Go](https://opencode.ai/zen) as a cloud provider (OpenAI-compatible, Bearer token)
 
 ## Setup
 

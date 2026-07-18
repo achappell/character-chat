@@ -248,6 +248,8 @@ function getProvider()   { return localStorage.getItem('cc_provider') || window.
 function getKey()        { return window.CC_API_KEY || localStorage.getItem('cc_api_key') || ''; }
 function getLocalUrl()   { return localStorage.getItem('cc_local_url') || window.CC_LOCAL_URL || ''; }
 function getLocalModel() { return localStorage.getItem('cc_local_model') || window.CC_LOCAL_MODEL || ''; }
+function getOpenCodeKey()  { return window.CC_OPENCODE_KEY || localStorage.getItem('cc_opencode_key') || ''; }
+function getOpenCodeModel(){ return localStorage.getItem('cc_opencode_model') || window.CC_OPENCODE_MODEL || ''; }
 function getProfileName(){ return localStorage.getItem('cc_profile_name') || ''; }
 
 let activeTheme = null;
@@ -269,12 +271,16 @@ async function callLLM(system, userMsg) {
     if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'API error'); }
     return (await res.json()).content?.[0]?.text || '';
   } else {
-    const res = await fetch(getLocalUrl(), {
+    const isOpenCode = getProvider() === 'opencode-go';
+    const url = isOpenCode ? 'https://opencode.ai/zen/go/v1/chat/completions' : getLocalUrl();
+    const headers = { 'Content-Type': 'application/json' };
+    if (isOpenCode) headers['Authorization'] = `Bearer ${getOpenCodeKey()}`;
+    const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: getLocalModel(), messages: [{ role: 'system', content: system }, ...messages] })
+      headers,
+      body: JSON.stringify({ model: isOpenCode ? getOpenCodeModel() : getLocalModel(), messages: [{ role: 'system', content: system }, ...messages] })
     });
-    if (!res.ok) throw new Error('Local LLM error');
+    if (!res.ok) throw new Error(isOpenCode ? 'OpenCode Go error' : 'Local LLM error');
     return (await res.json()).choices?.[0]?.message?.content || '';
   }
 }
