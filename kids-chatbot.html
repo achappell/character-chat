@@ -452,12 +452,10 @@ const OPENCODE_GO_MODELS = [
   { id: 'glm-5.2',           label: 'GLM 5.2',            recommended: true },
   { id: 'kimi-k2.6',         label: 'Kimi K2.6',          recommended: true },
   { id: 'glm-5.1',           label: 'GLM 5.1' },
-  { id: 'kimi-k3',           label: 'Kimi K3' },
   { id: 'kimi-k2.7-code',    label: 'Kimi K2.7 Code' },
   { id: 'deepseek-v4-pro',   label: 'DeepSeek V4 Pro' },
   { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
-  { id: 'mimo-v2.5-pro',     label: 'MiMo V2.5 Pro' },
-  { id: 'mimo-v2.5',         label: 'MiMo V2.5' },
+  { id: 'mimo-v2.5-free',    label: 'MiMo V2.5 (Free)' },
   { id: 'grok-4.5',          label: 'Grok 4.5' },
 ];
 
@@ -711,7 +709,7 @@ async function callLLM({ system, messages, maxTokens = 1000 }) {
     const systemContent = 'CRITICAL RULE: You must ONLY respond in English. Never write Chinese, Japanese, or any other language. English only, no exceptions.\n\n' + (system || '');
     const openaiMessages = [{ role: 'system', content: systemContent }, ...messages];
     const isOpenCode = getProvider() === 'opencode-go';
-    const url = isOpenCode ? 'https://opencode.ai/zen/go/v1/chat/completions' : getLocalUrl();
+    const url = isOpenCode ? 'https://opencode.ai/zen/v1/chat/completions' : getLocalUrl();
     const headers = { 'Content-Type': 'application/json' };
     if (isOpenCode) headers['Authorization'] = `Bearer ${getOpenCodeKey()}`;
     const res = await fetch(url, {

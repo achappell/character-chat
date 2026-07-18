@@ -272,7 +272,7 @@ async function callLLM(system, userMsg) {
     return (await res.json()).content?.[0]?.text || '';
   } else {
     const isOpenCode = getProvider() === 'opencode-go';
-    const url = isOpenCode ? 'https://opencode.ai/zen/go/v1/chat/completions' : getLocalUrl();
+    const url = isOpenCode ? 'https://opencode.ai/zen/v1/chat/completions' : getLocalUrl();
     const headers = { 'Content-Type': 'application/json' };
     if (isOpenCode) headers['Authorization'] = `Bearer ${getOpenCodeKey()}`;
     const res = await fetch(url, {
