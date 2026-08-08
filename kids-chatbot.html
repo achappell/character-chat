@@ -77,6 +77,15 @@ body {
 }
 .setup-btn:active { background: #4454d4; }
 .setup-error { font-size: 13px; color: #ff4757; margin-top: 10px; display: none; }
+.model-refresh {
+  border: 1.5px solid #e0e4ff; background: #f8f9ff; border-radius: 10px;
+  padding: 8px 12px; font-size: 12px; font-weight: 600; color: #5b6ef5;
+  cursor: pointer; margin-bottom: 12px; font-family: inherit;
+}
+.model-refresh:active { background: #eef0ff; }
+.model-refresh[disabled] { opacity: 0.5; cursor: default; }
+.model-status { font-size: 12px; color: #aaa; margin: -6px 0 12px; line-height: 1.4; }
+.model-status.err { color: #ff4757; }
 
 /* PROFILE SCREEN */
 .profile-wrap {
@@ -278,6 +287,9 @@ body {
           <button class="provider-btn" id="btn-local" onclick="selectProvider('local')">
             <span class="pb-icon">🖥️</span>Local LLM
           </button>
+          <button class="provider-btn" id="btn-openai" onclick="selectProvider('openai')">
+            <span class="pb-icon">💬</span>ChatGPT (OpenAI)
+          </button>
           <button class="provider-btn" id="btn-opencode-go" onclick="selectProvider('opencode-go')">
             <span class="pb-icon">⚡</span>OpenCode Go
           </button>
@@ -287,6 +299,11 @@ body {
           <div class="setup-label">API Key</div>
           <div class="setup-hint">Get yours at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
           <input class="key-input" type="password" id="api-key-input" placeholder="sk-ant-api03-..." />
+          <div class="setup-label">Model</div>
+          <div class="setup-hint">⭐ = recommended for character chat</div>
+          <select class="key-input" id="anthropic-model-input"></select>
+          <button type="button" class="model-refresh" onclick="refreshModels('anthropic')">🔄 Load models from my key</button>
+          <div class="model-status" id="anthropic-model-status"></div>
         </div>
         <!-- Local LLM section -->
         <div class="setup-section" id="section-local">
@@ -297,6 +314,17 @@ body {
           <div class="setup-hint">Must be pulled and available on your server</div>
           <input class="key-input" type="text" id="local-model-input" placeholder="qwen2.5:14b" />
         </div>
+        <!-- OpenAI section -->
+        <div class="setup-section" id="section-openai">
+          <div class="setup-label">API Key</div>
+          <div class="setup-hint">Get yours at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a></div>
+          <input class="key-input" type="password" id="openai-key-input" placeholder="sk-..." />
+          <div class="setup-label">Model</div>
+          <div class="setup-hint">⭐ = recommended &middot; full list at <a href="https://platform.openai.com/docs/models" target="_blank">platform.openai.com/docs/models</a></div>
+          <select class="key-input" id="openai-model-input"></select>
+          <button type="button" class="model-refresh" onclick="refreshModels('openai')">🔄 Load models from my key</button>
+          <div class="model-status" id="openai-model-status"></div>
+        </div>
         <!-- OpenCode Go section -->
         <div class="setup-section" id="section-opencode-go">
           <div class="setup-label">API Key</div>
@@ -305,6 +333,12 @@ body {
           <div class="setup-label">Model</div>
           <div class="setup-hint">⭐ = recommended for character chat &middot; full list at <a href="https://opencode.ai/docs/go/" target="_blank">opencode.ai/docs/go</a></div>
           <select class="key-input" id="opencode-model-input"></select>
+        </div>
+        <!-- Effort: applies to Claude, and to OpenAI reasoning models -->
+        <div class="setup-section visible" id="section-effort">
+          <div class="setup-label">Thinking effort</div>
+          <div class="setup-hint">Low keeps replies fast and in-character. Extra high and Max make the model think before answering — slower and pricier, and rarely worth it for chat.</div>
+          <select class="key-input" id="effort-input"></select>
         </div>
         <button class="setup-btn" onclick="saveSettings()">Save & Start Chatting ✨</button>
         <div class="setup-error" id="setup-error"></div>
@@ -447,6 +481,100 @@ function getLocalUrl() { return localStorage.getItem('cc_local_url') || window.C
 function getLocalModel(){ return localStorage.getItem('cc_local_model') || window.CC_LOCAL_MODEL || ''; }
 function getOpenCodeKey()  { return window.CC_OPENCODE_KEY || localStorage.getItem('cc_opencode_key') || ''; }
 function getOpenCodeModel(){ return localStorage.getItem('cc_opencode_model') || window.CC_OPENCODE_MODEL || ''; }
+function getOpenAIKey()   { return window.CC_OPENAI_KEY || localStorage.getItem('cc_openai_key') || ''; }
+function getOpenAIModel() { return localStorage.getItem('cc_openai_model') || window.CC_OPENAI_MODEL || 'gpt-4o-mini'; }
+function getAnthropicModel(fallback) { return localStorage.getItem('cc_anthropic_model') || window.CC_MODEL || fallback; }
+
+// Seed lists. The 🔄 button replaces these with whatever the key can actually use.
+const ANTHROPIC_MODELS = [
+  { id: 'claude-sonnet-5',            label: 'Claude Sonnet 5',   recommended: true },
+  { id: 'claude-haiku-4-5-20251001',  label: 'Claude Haiku 4.5 (cheapest)', recommended: true },
+  { id: 'claude-opus-5',              label: 'Claude Opus 5 (priciest)' },
+  { id: 'claude-opus-4-8',            label: 'Claude Opus 4.8' },
+  { id: 'claude-sonnet-4-6',          label: 'Claude Sonnet 4.6' },
+];
+
+const OPENAI_MODELS = [
+  { id: 'gpt-5.6-luna',  label: 'GPT-5.6 Luna',           recommended: true },
+  { id: 'gpt-5.6-sol',   label: 'GPT-5.6 Sol' },
+  { id: 'gpt-5.6-terra', label: 'GPT-5.6 Terra' },
+  { id: 'gpt-5.5',       label: 'GPT-5.5' },
+  { id: 'gpt-5.4-mini',  label: 'GPT-5.4 mini (cheaper)', recommended: true },
+  { id: 'gpt-5.4-nano',  label: 'GPT-5.4 nano (cheapest)' },
+  { id: 'gpt-4o-mini',   label: 'GPT-4o mini (older, cheap)' },
+];
+
+const EFFORT_LEVELS = [
+  { id: 'low',    label: 'Low — fastest, cheapest (good for chat)' },
+  { id: 'medium', label: 'Medium — balanced' },
+  { id: 'high',   label: 'High — more thoughtful, slower' },
+  { id: 'xhigh',  label: 'Extra high — thinks before replying' },
+  { id: 'max',    label: 'Max — slowest, priciest' },
+];
+
+function getEffort() { return localStorage.getItem('cc_effort') || window.CC_EFFORT || 'low'; }
+
+// xhigh/max force thinking on, which eats the max_tokens budget — so the reply
+// budget has to grow with them or the character gets cut off mid-sentence.
+function thinksHard(effort) { return effort === 'xhigh' || effort === 'max'; }
+
+// Models that accept OpenAI's reasoning_effort. Sending it to a non-reasoning
+// model is a 400, so this stays a strict allowlist.
+function openAIReasons(model) { return /^(o\d|gpt-5)/.test(model); }
+
+function fillModelSelect(selectId, models, current) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  select.innerHTML = '';
+  models.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = (m.recommended ? '⭐ ' : '') + (m.label || m.id);
+    select.appendChild(opt);
+  });
+  if (current && !models.some(m => m.id === current)) {
+    const opt = document.createElement('option');
+    opt.value = current;
+    opt.textContent = current;
+    select.appendChild(opt);
+  }
+  select.value = current || models[0].id;
+}
+
+// Ask the provider which models this key can actually use, so the list is never a guess.
+async function refreshModels(provider) {
+  const isAnthropic = provider === 'anthropic';
+  const statusEl = document.getElementById(provider + '-model-status');
+  const key = isAnthropic
+    ? document.getElementById('api-key-input').value.trim()
+    : document.getElementById('openai-key-input').value.trim();
+  statusEl.className = 'model-status';
+  if (!key) { statusEl.className = 'model-status err'; statusEl.textContent = 'Paste your API key first.'; return; }
+  statusEl.textContent = 'Loading…';
+  try {
+    const res = await fetch(isAnthropic ? 'https://api.anthropic.com/v1/models?limit=100'
+                                        : 'https://api.openai.com/v1/models',
+      { headers: isAnthropic
+          ? { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }
+          : { 'Authorization': `Bearer ${key}` } });
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || `HTTP ${res.status}`); }
+    const data = await res.json();
+    let models = (data.data || []).map(m => ({ id: m.id, label: m.display_name || m.id }));
+    if (!isAnthropic) {
+      // /v1/models lists embeddings, audio, image models too — keep the chat-capable ones.
+      models = models.filter(m => /^(gpt|o\d|chatgpt)/.test(m.id)
+        && !/(audio|realtime|transcribe|tts|image|search|embedding|moderation|instruct|deep-research|live-)/.test(m.id));
+    }
+    models.sort((a, b) => a.id.localeCompare(b.id));
+    if (!models.length) throw new Error('No chat models found for this key');
+    const current = document.getElementById(provider === 'anthropic' ? 'anthropic-model-input' : 'openai-model-input').value;
+    fillModelSelect(isAnthropic ? 'anthropic-model-input' : 'openai-model-input', models, current);
+    statusEl.textContent = `Loaded ${models.length} models from your key.`;
+  } catch (err) {
+    statusEl.className = 'model-status err';
+    statusEl.textContent = `Couldn't load models: ${err.message}. The built-in list still works.`;
+  }
+}
 
 const OPENCODE_GO_MODELS = [
   { id: 'glm-5.2',           label: 'GLM 5.2',            recommended: true },
@@ -481,8 +609,12 @@ function selectProvider(p) {
   document.getElementById('btn-anthropic').classList.toggle('active', p === 'anthropic');
   document.getElementById('btn-local').classList.toggle('active', p === 'local');
   document.getElementById('btn-opencode-go').classList.toggle('active', p === 'opencode-go');
+  document.getElementById('btn-openai').classList.toggle('active', p === 'openai');
   document.getElementById('section-anthropic').classList.toggle('visible', p === 'anthropic');
   document.getElementById('section-local').classList.toggle('visible', p === 'local');
+  document.getElementById('section-openai').classList.toggle('visible', p === 'openai');
+  // Local and OpenCode Go have no effort knob.
+  document.getElementById('section-effort').classList.toggle('visible', p === 'anthropic' || p === 'openai');
   document.getElementById('section-opencode-go').classList.toggle('visible', p === 'opencode-go');
 }
 
@@ -503,6 +635,16 @@ function saveSettings() {
       err.style.display = 'block'; return;
     }
     localStorage.setItem('cc_api_key', key);
+    localStorage.setItem('cc_anthropic_model', document.getElementById('anthropic-model-input').value);
+  } else if (_selectedProvider === 'openai') {
+    const key = document.getElementById('openai-key-input').value.trim();
+    const model = document.getElementById('openai-model-input').value.trim() || 'gpt-4o-mini';
+    if (!key.startsWith('sk-')) {
+      err.textContent = 'Please paste a valid OpenAI API key (starts with sk-)';
+      err.style.display = 'block'; return;
+    }
+    localStorage.setItem('cc_openai_key', key);
+    localStorage.setItem('cc_openai_model', model);
   } else if (_selectedProvider === 'opencode-go') {
     const key = document.getElementById('opencode-key-input').value.trim();
     const model = document.getElementById('opencode-model-input').value.trim();
@@ -518,6 +660,7 @@ function saveSettings() {
     localStorage.setItem('cc_local_url', url);
     localStorage.setItem('cc_local_model', model);
   }
+  localStorage.setItem('cc_effort', document.getElementById('effort-input').value);
   localStorage.setItem('cc_provider', _selectedProvider);
   if (new URLSearchParams(location.search).get('settings')) {
     history.back();
@@ -534,6 +677,10 @@ function showSetup() {
   document.getElementById('api-key-input').value = getKey();
   document.getElementById('local-url-input').value = getLocalUrl();
   document.getElementById('local-model-input').value = getLocalModel();
+  document.getElementById('openai-key-input').value = getOpenAIKey();
+  fillModelSelect('anthropic-model-input', ANTHROPIC_MODELS, getAnthropicModel('claude-sonnet-5'));
+  fillModelSelect('openai-model-input', OPENAI_MODELS, getOpenAIModel());
+  fillModelSelect('effort-input', EFFORT_LEVELS, getEffort());
   document.getElementById('opencode-key-input').value = getOpenCodeKey();
   populateOpenCodeModelSelect();
   document.getElementById('setup-screen').classList.add('active');
@@ -694,6 +841,8 @@ function setChips(suggestions, loading = false) {
 
 async function callLLM({ system, messages, maxTokens = 1000 }) {
   if (getProvider() === 'anthropic') {
+    const _effort = getEffort();
+    const _deep = thinksHard(_effort);
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -702,24 +851,37 @@ async function callLLM({ system, messages, maxTokens = 1000 }) {
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: maxTokens, system, messages })
+      body: JSON.stringify({ model: getAnthropicModel('claude-sonnet-5'), max_tokens: _deep ? Math.max(maxTokens, 16000) : maxTokens,
+        output_config: { effort: _effort },
+        thinking: _deep ? { type: 'adaptive' } : { type: 'disabled' },
+        system, messages })
     });
     if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'API error'); }
     const data = await res.json();
-    return data.content?.[0]?.text || '';
+    return (data.content || []).find(b => b.type === 'text')?.text || '';
   } else {
     const systemContent = 'CRITICAL RULE: You must ONLY respond in English. Never write Chinese, Japanese, or any other language. English only, no exceptions.\n\n' + (system || '');
     const openaiMessages = [{ role: 'system', content: systemContent }, ...messages];
-    const isOpenCode = getProvider() === 'opencode-go';
-    const url = isOpenCode ? 'https://opencode-go-proxy.achappell.workers.dev/v1/chat/completions' : getLocalUrl();
+    const _p = getProvider();
+    const isOpenCode = _p === 'opencode-go';
+    const isOpenAI = _p === 'openai';
+    const url = isOpenCode ? 'https://opencode-go-proxy.achappell.workers.dev/v1/chat/completions'
+              : isOpenAI   ? 'https://api.openai.com/v1/chat/completions'
+              : getLocalUrl();
     const headers = { 'Content-Type': 'application/json' };
     if (isOpenCode) headers['Authorization'] = `Bearer ${getOpenCodeKey()}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ model: isOpenCode ? getOpenCodeModel() : getLocalModel(), messages: openaiMessages })
-    });
-    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || (isOpenCode ? 'OpenCode Go error' : 'Local LLM error')); }
+    if (isOpenAI)   headers['Authorization'] = `Bearer ${getOpenAIKey()}`;
+    const _oaiModel = isOpenAI ? getOpenAIModel() : '';
+    const _oaiEffort = isOpenAI && openAIReasons(_oaiModel)
+      ? { reasoning_effort: thinksHard(getEffort()) ? 'high' : getEffort() } : {};
+    const _body = { model: isOpenCode ? getOpenCodeModel() : isOpenAI ? _oaiModel : getLocalModel(), ..._oaiEffort, messages: openaiMessages };
+    let res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(_body) });
+    // Not every gpt-5.x variant accepts reasoning_effort — drop it and retry rather than fail.
+    if (!res.ok && _body.reasoning_effort) {
+      delete _body.reasoning_effort;
+      res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(_body) });
+    }
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || (isOpenCode ? 'OpenCode Go error' : isOpenAI ? 'OpenAI error' : 'Local LLM error')); }
     const data = await res.json();
     return data.choices?.[0]?.message?.content || '';
   }
@@ -851,7 +1013,11 @@ window.addEventListener('beforeunload', () => {
 renderCharacters();
 renderGroups();
 const _forceSettings = new URLSearchParams(location.search).get('settings');
-const _hasConfig = getProvider() === 'local' ? (getLocalUrl() && getLocalModel()) : getKey();
+const _cfgProvider = getProvider();
+const _hasConfig = _cfgProvider === 'local' ? (getLocalUrl() && getLocalModel())
+                 : _cfgProvider === 'openai' ? getOpenAIKey()
+                 : _cfgProvider === 'opencode-go' ? getOpenCodeKey()
+                 : getKey();
 if (_forceSettings) {
   showSetup();
 } else if (_hasConfig) {
