@@ -212,6 +212,12 @@ function getLocalUrl()   { return localStorage.getItem('cc_local_url') || window
 function getLocalModel() { return localStorage.getItem('cc_local_model') || window.CC_LOCAL_MODEL || ''; }
 function getOpenCodeKey()  { return window.CC_OPENCODE_KEY || localStorage.getItem('cc_opencode_key') || ''; }
 function getOpenCodeModel(){ return localStorage.getItem('cc_opencode_model') || window.CC_OPENCODE_MODEL || ''; }
+function getOpenAIKey()   { return window.CC_OPENAI_KEY || localStorage.getItem('cc_openai_key') || ''; }
+function getOpenAIModel() { return localStorage.getItem('cc_openai_model') || window.CC_OPENAI_MODEL || 'gpt-4o-mini'; }
+function getAnthropicModel(fallback) { return localStorage.getItem('cc_anthropic_model') || window.CC_MODEL || fallback; }
+function getEffort() { return localStorage.getItem('cc_effort') || window.CC_EFFORT || 'low'; }
+function thinksHard(effort) { return effort === 'xhigh' || effort === 'max'; }
+function openAIReasons(model) { return /^(o\d|gpt-5)/.test(model); }
 function getProfileName(){ return localStorage.getItem('cc_profile_name') || ''; }
 
 let selectedTopic = null;
@@ -220,6 +226,8 @@ let jokeCount = 0;
 async function callLLM(system, userMsg) {
   const messages = [{ role: 'user', content: userMsg }];
   if (getProvider() === 'anthropic') {
+    const _effort = getEffort();
+    const _deep = thinksHard(_effort);
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -228,21 +236,34 @@ async function callLLM(system, userMsg) {
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, system, messages })
+      body: JSON.stringify({ model: getAnthropicModel('claude-haiku-4-5'), max_tokens: _deep ? Math.max(600, 16000) : 600,
+        output_config: { effort: _effort },
+        thinking: _deep ? { type: 'adaptive' } : { type: 'disabled' },
+        system, messages })
     });
     if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'API error'); }
-    return (await res.json()).content?.[0]?.text || '';
+    return ((await res.json()).content || []).find(b => b.type === 'text')?.text || '';
   } else {
-    const isOpenCode = getProvider() === 'opencode-go';
-    const url = isOpenCode ? 'https://opencode-go-proxy.achappell.workers.dev/v1/chat/completions' : getLocalUrl();
+    const _p = getProvider();
+    const isOpenCode = _p === 'opencode-go';
+    const isOpenAI = _p === 'openai';
+    const url = isOpenCode ? 'https://opencode-go-proxy.achappell.workers.dev/v1/chat/completions'
+              : isOpenAI   ? 'https://api.openai.com/v1/chat/completions'
+              : getLocalUrl();
     const headers = { 'Content-Type': 'application/json' };
     if (isOpenCode) headers['Authorization'] = `Bearer ${getOpenCodeKey()}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ model: isOpenCode ? getOpenCodeModel() : getLocalModel(), messages: [{ role: 'system', content: system }, ...messages] })
-    });
-    if (!res.ok) throw new Error(isOpenCode ? 'OpenCode Go error' : 'Local LLM error');
+    if (isOpenAI)   headers['Authorization'] = `Bearer ${getOpenAIKey()}`;
+    const _oaiModel = isOpenAI ? getOpenAIModel() : '';
+    const _oaiEffort = isOpenAI && openAIReasons(_oaiModel)
+      ? { reasoning_effort: thinksHard(getEffort()) ? 'high' : getEffort() } : {};
+    const _body = { model: isOpenCode ? getOpenCodeModel() : isOpenAI ? _oaiModel : getLocalModel(), ..._oaiEffort, messages: [{ role: 'system', content: system }, ...messages] };
+    let res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(_body) });
+    // Not every gpt-5.x variant accepts reasoning_effort — drop it and retry rather than fail.
+    if (!res.ok && _body.reasoning_effort) {
+      delete _body.reasoning_effort;
+      res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(_body) });
+    }
+    if (!res.ok) throw new Error(isOpenCode ? 'OpenCode Go error' : isOpenAI ? 'OpenAI error' : 'Local LLM error');
     return (await res.json()).choices?.[0]?.message?.content || '';
   }
 }
@@ -386,7 +407,11 @@ function goBack() {
 }
 
 // Boot
-const _hasConfig = getProvider() === 'local' ? (getLocalUrl() && getLocalModel()) : getKey();
+const _cfgProvider = getProvider();
+const _hasConfig = _cfgProvider === 'local' ? (getLocalUrl() && getLocalModel())
+                 : _cfgProvider === 'openai' ? getOpenAIKey()
+                 : _cfgProvider === 'opencode-go' ? getOpenCodeKey()
+                 : getKey();
 if (_hasConfig) {
   buildTopicGrid();
 } else {
