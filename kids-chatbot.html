@@ -517,6 +517,11 @@ function getEffort() { return localStorage.getItem('cc_effort') || window.CC_EFF
 // xhigh/max force thinking on, which eats the max_tokens budget — so the reply
 // budget has to grow with them or the character gets cut off mid-sentence.
 function thinksHard(effort) { return effort === 'xhigh' || effort === 'max'; }
+// Haiku 4.5 and older reject output_config.effort and adaptive thinking.
+const _DEFAULT_MODEL = 'claude-sonnet-5';
+function supportsEffort(model) {
+  return /^claude-(opus-5|sonnet-5|fable-5|mythos-5|opus-4-[678]|sonnet-4-6)/.test(model);
+}
 
 // Models that accept OpenAI's reasoning_effort. Sending it to a non-reasoning
 // model is a 400, so this stays a strict allowlist.
@@ -842,7 +847,9 @@ function setChips(suggestions, loading = false) {
 async function callLLM({ system, messages, maxTokens = 1000 }) {
   if (getProvider() === 'anthropic') {
     const _effort = getEffort();
-    const _deep = thinksHard(_effort);
+    const _model = getAnthropicModel(_DEFAULT_MODEL);
+    const _tunable = supportsEffort(_model);
+    const _deep = _tunable && thinksHard(_effort);
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -851,9 +858,9 @@ async function callLLM({ system, messages, maxTokens = 1000 }) {
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
-      body: JSON.stringify({ model: getAnthropicModel('claude-sonnet-5'), max_tokens: _deep ? Math.max(maxTokens, 16000) : maxTokens,
-        output_config: { effort: _effort },
-        thinking: _deep ? { type: 'adaptive' } : { type: 'disabled' },
+      body: JSON.stringify({ model: _model, max_tokens: _deep ? 16000 : maxTokens,
+        ...(_tunable ? { output_config: { effort: _effort },
+                         thinking: _deep ? { type: 'adaptive' } : { type: 'disabled' } } : {}),
         system, messages })
     });
     if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'API error'); }

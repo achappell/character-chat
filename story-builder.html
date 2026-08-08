@@ -269,6 +269,11 @@ function getOpenAIModel() { return localStorage.getItem('cc_openai_model') || wi
 function getAnthropicModel(fallback) { return localStorage.getItem('cc_anthropic_model') || window.CC_MODEL || fallback; }
 function getEffort() { return localStorage.getItem('cc_effort') || window.CC_EFFORT || 'low'; }
 function thinksHard(effort) { return effort === 'xhigh' || effort === 'max'; }
+// Haiku 4.5 and older reject output_config.effort and adaptive thinking.
+const _DEFAULT_MODEL = 'claude-sonnet-5';
+function supportsEffort(model) {
+  return /^claude-(opus-5|sonnet-5|fable-5|mythos-5|opus-4-[678]|sonnet-4-6)/.test(model);
+}
 function openAIReasons(model) { return /^(o\d|gpt-5)/.test(model); }
 function getProfileName() { return localStorage.getItem('cc_profile_name') || ''; }
 function getProfileEmoji(){ return localStorage.getItem('cc_profile_emoji') || ''; }
@@ -282,7 +287,9 @@ async function callLLM(system, userMsg) {
   const messages = [{ role: 'user', content: userMsg }];
   if (getProvider() === 'anthropic') {
     const _effort = getEffort();
-    const _deep = thinksHard(_effort);
+    const _model = getAnthropicModel(_DEFAULT_MODEL);
+    const _tunable = supportsEffort(_model);
+    const _deep = _tunable && thinksHard(_effort);
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -291,9 +298,9 @@ async function callLLM(system, userMsg) {
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
-      body: JSON.stringify({ model: getAnthropicModel('claude-sonnet-5'), max_tokens: _deep ? Math.max(600, 16000) : 600,
-        output_config: { effort: _effort },
-        thinking: _deep ? { type: 'adaptive' } : { type: 'disabled' },
+      body: JSON.stringify({ model: _model, max_tokens: _deep ? 16000 : 600,
+        ...(_tunable ? { output_config: { effort: _effort },
+                         thinking: _deep ? { type: 'adaptive' } : { type: 'disabled' } } : {}),
         system, messages })
     });
     if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'API error'); }
