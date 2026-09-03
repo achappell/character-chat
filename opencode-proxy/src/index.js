@@ -6,7 +6,7 @@ function corsHeaders(origin) {
   return {
     'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : '',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-opencode-session',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin',
   };
@@ -35,6 +35,7 @@ export default {
       headers: {
         'Content-Type': request.headers.get('Content-Type') || 'application/json',
         'Authorization': request.headers.get('Authorization') || '',
+        'x-opencode-session': request.headers.get('x-opencode-session') || '',
       },
       body: await request.text(),
     });

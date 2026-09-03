@@ -4,6 +4,9 @@
   const AVATARS = ['🦊','🐼','🐸','🦄','🐯','🦁','🐻','🐨','🐱','🐶','🐰','🐧','🌟','🦋','🎮'];
 
   const ls   = k => localStorage.getItem(k) || '';
+  const newOpenCodeSessionId = () => globalThis.crypto?.randomUUID?.()
+    || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  let openCodeSessionId = newOpenCodeSessionId();
   const prov = () => ls('cc_provider') || window.CC_PROVIDER || 'anthropic';
   const model= () => {
     if (prov() === 'opencode-go') return ls('cc_opencode_model') || window.CC_OPENCODE_MODEL || 'OpenCode Go';
@@ -166,6 +169,8 @@
   // ── Public API ───────────────────────────────────────────────────────────
   window.updateSharedHeader = render;
   window.setHeaderVisible   = v => { header.style.display = v ? 'flex' : 'none'; };
+  window.getOpenCodeSessionId = () => openCodeSessionId;
+  window.resetOpenCodeSession = () => { openCodeSessionId = newOpenCodeSessionId(); };
 
   // ── Page padding ─────────────────────────────────────────────────────────
   function applyPadding() {

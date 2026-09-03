@@ -719,6 +719,7 @@ function renderCharacters() {
 
 function selectCharacter(char) {
   currentChar = char;
+  window.resetOpenCodeSession();
   history = [];
   const emojiEl = document.getElementById('chat-emoji');
   if (char.image) {
@@ -789,6 +790,7 @@ function parseGroupResponse(text, members) {
 
 function selectGroup(group) {
   currentGroup = group;
+  window.resetOpenCodeSession();
   currentChar = null;
   history = [];
   const emojiEl = document.getElementById('chat-emoji');
@@ -877,6 +879,7 @@ async function callLLM({ system, messages, maxTokens = 1000 }) {
               : getLocalUrl();
     const headers = { 'Content-Type': 'application/json' };
     if (isOpenCode) headers['Authorization'] = `Bearer ${getOpenCodeKey()}`;
+    if (isOpenCode) headers['x-opencode-session'] = window.getOpenCodeSessionId();
     if (isOpenAI)   headers['Authorization'] = `Bearer ${getOpenAIKey()}`;
     const _oaiModel = isOpenAI ? getOpenAIModel() : '';
     const _oaiEffort = isOpenAI && openAIReasons(_oaiModel)

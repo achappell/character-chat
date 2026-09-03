@@ -297,6 +297,7 @@ async function callLLM(system, userMsg) {
               : getLocalUrl();
     const headers = { 'Content-Type': 'application/json' };
     if (isOpenCode) headers['Authorization'] = `Bearer ${getOpenCodeKey()}`;
+    if (isOpenCode) headers['x-opencode-session'] = window.getOpenCodeSessionId();
     if (isOpenAI)   headers['Authorization'] = `Bearer ${getOpenAIKey()}`;
     const _oaiModel = isOpenAI ? getOpenAIModel() : '';
     const _oaiEffort = isOpenAI && openAIReasons(_oaiModel)
@@ -394,6 +395,7 @@ function checkReady() {
 }
 
 async function makeStory() {
+  window.resetOpenCodeSession();
   document.getElementById('entry-screen').style.display = 'none';
   document.getElementById('loading-screen').style.display = 'block';
   window.scrollTo(0, 0);
